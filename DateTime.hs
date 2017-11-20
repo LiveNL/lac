@@ -87,24 +87,20 @@ run :: Parser a b -> [a] -> Maybe b
 run _ [] = Nothing
 run p cs = Just (fst (head (parse p cs)))
 
+dt = DateTime { date = Date { year = Year 2017, month = Month 11, day = Day 20 },
+                time = Time { hour = Hour 03, minute = Minute 09, second = Second 18 },
+                utc = True }
 
 -- Exercise 3
 printDateTime :: DateTime -> String
-printDateTime = undefined
-
-
+printDateTime (DateTime (Date (Year x) (Month y) (Day z)) (Time (Hour a) (Minute b) (Second c)) i) =
+  show x ++ show y ++ show z ++ "T" ++ show a ++ show b ++ show c ++ show i
 
 -- Exercise 4
 parsePrint s = fmap printDateTime $ run parseDateTime s
 
-
-
-
 -- Exercise 5
 checkDateTime :: DateTime -> Bool
 checkDateTime = undefined
-
-
-
 -- Exercise 6
 
