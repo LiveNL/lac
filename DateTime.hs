@@ -84,7 +84,8 @@ parseDateTime = DateTime <$> parseDate <*> parseTime <*> parseUtc
 
 -- Exercise 2
 run :: Parser a b -> [a] -> Maybe b
-run = undefined
+run _ [] = Nothing
+run p cs = Just (fst (head (parse p cs)))
 
 
 -- Exercise 3
