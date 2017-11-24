@@ -48,35 +48,40 @@ main = interact (printOutput . processCheck . processInput)
         printOutput  = unlines . map show
 
 parseSecond :: Parser Char Second
-parseSecond = Second <$> integer
+parseSecond = (\a b -> Second (test ([a]++[b]))) <$> newdigit <*> newdigit
 
 parseMinute :: Parser Char Minute
-parseMinute = Minute <$> integer
+parseMinute = (\a b -> Minute (test ([a]++[b]))) <$> newdigit <*> newdigit
 
 parseHour :: Parser Char Hour
-parseHour = Hour <$> integer
+parseHour = (\a b -> Hour (test ([a]++[b]))) <$> newdigit <*> newdigit
 
 parseTime :: Parser Char Time
 parseTime = Time <$> parseHour <*> parseMinute <*> parseSecond
 
 parseYear :: Parser Char Year
-parseYear = Year <$> integer
+parseYear = (\a b c d -> Year (test ([a]++[b]++[c]++[d]))) <$> newdigit <*> newdigit <*> newdigit <*> newdigit
 
 parseMonth :: Parser Char Month
-parseMonth = Month <$> integer
+parseMonth = (\a b -> Month (test ([a]++[b]))) <$> newdigit <*> newdigit
 
 parseDay :: Parser Char Day
-parseDay = Day <$> integer
+parseDay = (\a b _ -> Day (test ([a]++[b]))) <$> newdigit <*> newdigit <*> symbol 'T'
 
 parseDate :: Parser Char Date
 parseDate = Date <$> parseYear <*> parseMonth <*> parseDay
 
 parseUtc :: Parser Char Bool
-parseUtc = parseBool <$> digit
+parseUtc = parseBool <$> identifier
 
-parseBool :: Char -> Bool
-parseBool 'Z' = True
-parseBool _ = False
+parseBool :: String -> Bool
+parseBool "Z" = True
+parseBool _   = False
+
+test :: [Int] -> Int
+test []       = 0
+test l@(x:xs) = 10^i * x + test xs
+  where i = (length l) - 1
 
 -- Exercise 1
 parseDateTime :: Parser Char DateTime
