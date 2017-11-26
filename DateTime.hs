@@ -110,8 +110,21 @@ printDateTime (DateTime (Date (Year x) (Month y) (Day z)) (Time (Hour a) (Minute
 -- Exercise 4
 parsePrint s = fmap printDateTime $ run parseDateTime s
 
+parseCheck s = checkDateTime <$> run parseDateTime s
+
 -- Exercise 5
 checkDateTime :: DateTime -> Bool
-checkDateTime = undefined
+checkDateTime (DateTime (Date (Year y) (Month mo) (Day d)) (Time (Hour h) (Minute mn) (Second s)) u)
+  | mo == 2 && y `mod` 4 == 0 && d /= 28 = trace (show "Wrong amount of days/month") $ False
+  | mo == 2 && d /= 29         = trace (show "Wrong amount of days/month") $ False
+  | mo `mod` 2 == 0 && d /= 30 = trace (show "Wrong amount of days/month") $ False
+  | mo `mod` 2 == 1 && d /= 31 = trace (show "Wrong amount of days/month") $ False
+  | y < 0000                   = trace (show "Year is BC")                 $ False
+  | mo < 1 || mo > 12          = trace (show "Month is unexisting")        $ False
+  | d < 1  || d > 31           = trace (show "Day is unexisting")          $ False
+  | h < 0  || h > 24           = trace (show "Hour is unexisting")         $ False
+  | mn < 0 || mn > 59          = trace (show "Minute is unexisting")       $ False
+  | otherwise                  = True
+
 -- Exercise 6
 
