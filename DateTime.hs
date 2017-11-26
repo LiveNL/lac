@@ -48,27 +48,25 @@ main = interact (printOutput . processCheck . processInput)
         printOutput  = unlines . map show
 
 parseSecond :: Parser Char Second
-parseSecond = (\a b -> Second (test ([a]++[b]))) <$> newdigit <*> newdigit
+parseSecond = (\a b -> Second (mergeInts (a:[b]))) <$> newdigit <*> newdigit
 
 parseMinute :: Parser Char Minute
-parseMinute = (\a b -> Minute (test ([a]++[b]))) <$> newdigit <*> newdigit
+parseMinute = (\a b -> Minute (mergeInts (a:[b]))) <$> newdigit <*> newdigit
 
 parseHour :: Parser Char Hour
-parseHour = (\a b -> Hour (test ([a]++[b]))) <$> newdigit <*> newdigit
+parseHour = (\a b -> Hour (mergeInts (a:[b]))) <$> newdigit <*> newdigit
 
 parseTime :: Parser Char Time
 parseTime = Time <$> parseHour <*> parseMinute <*> parseSecond
 
---parse' = parseYear
-
 parseYear :: Parser Char Year
-parseYear = (\a b c d -> Year (test ([a]++[b]++[c]++[d]))) <$> newdigit <*> newdigit <*> newdigit <*> newdigit
+parseYear = (\a b c d -> Year (mergeInts (a:b:c:[d]))) <$> newdigit <*> newdigit <*> newdigit <*> newdigit
 
 parseMonth :: Parser Char Month
-parseMonth = (\a b -> Month (test ([a]++[b]))) <$> newdigit <*> newdigit
+parseMonth = (\a b -> Month (mergeInts (a:[b]))) <$> newdigit <*> newdigit
 
 parseDay :: Parser Char Day
-parseDay = (\a b _ -> Day (test ([a]++[b]))) <$> newdigit <*> newdigit <*> symbol 'T'
+parseDay = (\a b _ -> Day (mergeInts  (a:[b]))) <$> newdigit <*> newdigit <*> symbol 'T'
 
 parseDate :: Parser Char Date
 parseDate = Date <$> parseYear <*> parseMonth <*> parseDay
@@ -80,9 +78,9 @@ parseBool :: String -> Bool
 parseBool "Z" = True
 parseBool _   = False
 
-test :: [Int] -> Int
-test []       = 0
-test l@(x:xs) = 10^i * x + test xs
+mergeInts :: [Int] -> Int
+mergeInts []       = 0
+mergeInts l@(x:xs) = 10^i * x + mergeInts xs
   where i = (length l) - 1
 
 -- Exercise 1
