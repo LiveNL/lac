@@ -1,6 +1,6 @@
 import ParseLib.Abstract
 
-
+import Debug.Trace
 -- Starting Framework
 
 
@@ -8,32 +8,32 @@ import ParseLib.Abstract
 data DateTime = DateTime { date :: Date
                          , time :: Time
                          , utc :: Bool }
-    deriving (Eq, Ord)
+    deriving (Eq, Ord, Show)
 
 data Date = Date { year  :: Year
                  , month :: Month
                  , day   :: Day }
-    deriving (Eq, Ord)
+    deriving (Eq, Ord, Show)
 
-newtype Year  = Year { unYear :: Int }  deriving (Eq, Ord)
-newtype Month = Month { unMonth :: Int } deriving (Eq, Ord)
-newtype Day   = Day { unDay :: Int } deriving (Eq, Ord)
+newtype Year  = Year { unYear :: Int }  deriving (Eq, Ord, Show)
+newtype Month = Month { unMonth :: Int } deriving (Eq, Ord, Show)
+newtype Day   = Day { unDay :: Int } deriving (Eq, Ord, Show)
 
 data Time = Time { hour   :: Hour
                  , minute :: Minute
                  , second :: Second }
-    deriving (Eq, Ord)
+    deriving (Eq, Ord, Show)
 
-newtype Hour   = Hour { unHour :: Int } deriving (Eq, Ord)
-newtype Minute = Minute { unMinute :: Int } deriving (Eq, Ord)
-newtype Second = Second { unSecond :: Int } deriving (Eq, Ord)
+newtype Hour   = Hour { unHour :: Int } deriving (Eq, Ord, Show)
+newtype Minute = Minute { unMinute :: Int } deriving (Eq, Ord, Show)
+newtype Second = Second { unSecond :: Int } deriving (Eq, Ord, Show)
 
 
 -- | The main interaction function. Used for IO, do not edit.
 data Result = SyntaxError | Invalid DateTime | Valid DateTime deriving (Eq, Ord)
 
-instance Show DateTime where
-    show = printDateTime
+--instance Show DateTime where
+ --   show = printDateTime
 
 instance Show Result where
     show SyntaxError = "date/time with wrong syntax"
@@ -59,8 +59,28 @@ parseHour = Hour <$> integer
 parseTime :: Parser Char Time
 parseTime = Time <$> parseHour <*> parseMinute <*> parseSecond
 
+--parse' = parseYear
+
 parseYear :: Parser Char Year
-parseYear = Year <$> integer
+parseYear = Year <$> newdigit <*> newdigit
+
+parseYear' :: Parser Char Year
+parseYear' = f <$> newdigit <*> newdigit
+  where f x y = Year <$> x
+  --where f x = Year (fst (head x))
+  --where f x = Year (sum (map fst x))
+
+
+-- l = concat ((\a b c d -> a:b:c:d:[]) <$> parse digit "1" <*> parse digit "2" <*> parse digit "3" <*> parse digit "4")
+
+-- ((\a b c d -> (fst a * 100, snd a) :b:c:d:[]) <$> parse integer "1" <*> parse integer "2" <*> parse integer "3" <*> parse integer "4")
+
+-- [(fst (b "1234")), (fst (b (snd (b "1234"))))]
+
+--parseDigits :: Parser Char Char
+--parseDigits = \a b c d -> choice (a ++ b ++ c ++ d) <$> digit <*> digit <*> digit <*> digit
+
+--parseDigit = newdigit <$> choice digit <*> digit <*> digit <*> digit
 
 parseMonth :: Parser Char Month
 parseMonth = Month <$> integer
@@ -94,7 +114,13 @@ dt = DateTime { date = Date { year = Year 2017, month = Month 11, day = Day 20 }
 -- Exercise 3
 printDateTime :: DateTime -> String
 printDateTime (DateTime (Date (Year x) (Month y) (Day z)) (Time (Hour a) (Minute b) (Second c)) i) =
-  show x ++ show y ++ show z ++ "T" ++ show a ++ show b ++ show c ++ show i
+  concat (show x : (f' y) : (f' z) : "T" : (f' a) : (f' b) : (f' c) : (g' i) : [])
+    where f' f = if f < 10
+                 then "0" ++ (show f)
+                 else show f
+          g' g = if g
+                 then "Z"
+                 else ""
 
 -- Exercise 4
 parsePrint s = fmap printDateTime $ run parseDateTime s
