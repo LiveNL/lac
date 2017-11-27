@@ -27,7 +27,7 @@ data Time = Time { hour   :: Hour
 
 newtype Hour   = Hour { unHour :: Int } deriving (Eq, Ord)
 newtype Minute = Minute { unMinute :: Int } deriving (Eq, Ord)
-newtype Second = Second { unSecond :: Int } deriving (Eq, Ord)
+newtype Second = Second { unSecond :: Int } deriving (Eq, Ord, Show)
 
 
 -- | The main interaction function. Used for IO, do not edit.
@@ -48,29 +48,17 @@ main = interact (printOutput . processCheck . processInput)
         processCheck = map (maybe SyntaxError (\x -> if checkDateTime x then Valid x else Invalid x))
         printOutput  = unlines . map show
 
-parseSecond :: Parser Char Second
-parseSecond = (\a b -> Second (test ([a]++[b]))) <$> newdigit <*> newdigit
+parse2D :: Parser Char Int
+parse2D = (\a b -> (test ([a]++[b]))) <$> newdigit <*> newdigit
 
-parseMinute :: Parser Char Minute
-parseMinute = (\a b -> Minute (test ([a]++[b]))) <$> newdigit <*> newdigit
-
-parseHour :: Parser Char Hour
-parseHour = (\a b -> Hour (test ([a]++[b]))) <$> newdigit <*> newdigit
+parse4D :: Parser Char Int
+parse4D = (\a b c d -> (test ([a]++[b]++[c]++[d]))) <$> newdigit <*> newdigit <*> newdigit <*> newdigit
 
 parseTime :: Parser Char Time
-parseTime = Time <$> parseHour <*> parseMinute <*> parseSecond
-
-parseYear :: Parser Char Year
-parseYear = (\a b c d -> Year (test ([a]++[b]++[c]++[d]))) <$> newdigit <*> newdigit <*> newdigit <*> newdigit
-
-parseMonth :: Parser Char Month
-parseMonth = (\a b -> Month (test ([a]++[b]))) <$> newdigit <*> newdigit
-
-parseDay :: Parser Char Day
-parseDay = (\a b _ -> Day (test ([a]++[b]))) <$> newdigit <*> newdigit <* symbol 'T'
+parseTime = (\a b c -> Time (Hour a) (Minute b) (Second c)) <$> parse2D <*> parse2D <*> parse2D
 
 parseDate :: Parser Char Date
-parseDate = Date <$> parseYear <*> parseMonth <*> parseDay
+parseDate = (\a b c _ -> Date (Year a) (Month b) (Day c)) <$> parse4D <*> parse2D <*> parse2D <*> symbol 'T'
 
 parse1 :: Parser Char Bool
 parse1 = (\x -> parseBool x) <$> option (symbol 'Z') 'E'
