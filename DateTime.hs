@@ -1,5 +1,4 @@
 import ParseLib.Abstract
-import Debug.Trace
 
 -- Kevin Wilbrink & Jordi Wippert
 
@@ -46,7 +45,7 @@ main :: IO ()
 main = interact (printOutput . processCheck . processInput)
     where
         processInput = map (run parseDateTime) . lines
-        processCheck a = trace (show ("a")) $ map (maybe SyntaxError (\x -> if checkDateTime x then Valid x else Invalid x)) a
+        processCheck = map (maybe SyntaxError (\x -> if checkDateTime x then Valid x else Invalid x))
         printOutput  = unlines . map show
 
 parseSecond :: Parser Char Second
@@ -68,7 +67,7 @@ parseMonth :: Parser Char Month
 parseMonth = (\a b -> Month (test ([a]++[b]))) <$> newdigit <*> newdigit
 
 parseDay :: Parser Char Day
-parseDay = (\a b _ -> Day (test ([a]++[b]))) <$> newdigit <*> newdigit <*> symbol 'T'
+parseDay = (\a b _ -> Day (test ([a]++[b]))) <$> newdigit <*> newdigit <* symbol 'T'
 
 parseDate :: Parser Char Date
 parseDate = Date <$> parseYear <*> parseMonth <*> parseDay
