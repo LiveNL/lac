@@ -73,11 +73,11 @@ parseDay = (\a b _ -> Day (mergeInts  (a:[b]))) <$> newdigit <*> newdigit <*> sy
 parseDate :: Parser Char Date
 parseDate = Date <$> parseYear <*> parseMonth <*> parseDay
 
-parseUtc :: Parser Char Bool
-parseUtc = parseBool <$> identifier
+parse1 :: Parser Char Bool
+parse1 = (\x -> parseBool x) <$> option (symbol 'Z') 'E'
 
-parseBool :: String -> Bool
-parseBool "Z" = True
+parseBool :: Char -> Bool
+parseBool 'Z' = True
 parseBool _   = False
 
 mergeInts :: [Int] -> Int
@@ -87,27 +87,32 @@ mergeInts l@(x:xs) = 10^i * x + mergeInts xs
 
 -- Exercise 1
 parseDateTime :: Parser Char DateTime
-parseDateTime = DateTime <$> parseDate <*> parseTime <*> parseUtc
+parseDateTime = DateTime <$> parseDate <*> parseTime <*> parse1
 
 -- Exercise 2
 run :: Parser a b -> [a] -> Maybe b
 run _ [] = Nothing
-run p cs = Just (fst (head (parse p cs)))
+run p cs = if null (parse p cs)
+           then Nothing
+           else Just (fst (head (parse p cs)))
 
-dt = DateTime { date = Date { year = Year 2017, month = Month 11, day = Day 20 },
-                time = Time { hour = Hour 03, minute = Minute 09, second = Second 18 },
+
+
+dt = DateTime { date = Date { year = Year 2016, month = Month 2, day = Day 29 },
+                time = Time { hour = Hour 03, minute = Minute 49, second = Second 18 },
                 utc = True }
 
 -- Exercise 3
 printDateTime :: DateTime -> String
 printDateTime (DateTime (Date (Year x) (Month y) (Day z)) (Time (Hour a) (Minute b) (Second c)) i) =
-  concat (show x : (f' y) : (f' z) : "T" : (f' a) : (f' b) : (f' c) : (g' i) : [])
+  concat (show x : (f' y) : (f' z) : "T" : (f' a) : (f' b) : (f' c) : (boolChar i) : [])
     where f' f = if f < 10
                  then "0" ++ (show f)
                  else show f
-          g' g = if g
-                 then "Z"
-                 else ""
+                                  
+boolChar :: Bool -> [Char]
+boolChar True = "Z"
+boolChar _    = ""
 
 -- Exercise 4
 parsePrint s = fmap printDateTime $ run parseDateTime s
@@ -116,17 +121,48 @@ parseCheck s = checkDateTime <$> run parseDateTime s
 
 -- Exercise 5
 checkDateTime :: DateTime -> Bool
-checkDateTime (DateTime (Date (Year y) (Month mo) (Day d)) (Time (Hour h) (Minute mn) (Second s)) u)
-  | mo == 2 && y `mod` 4 == 0 && d /= 28 = trace (show "Wrong amount of days/month") $ False
-  | mo == 2 && d /= 29         = trace (show "Wrong amount of days/month") $ False
-  | mo `mod` 2 == 0 && d /= 30 = trace (show "Wrong amount of days/month") $ False
-  | mo `mod` 2 == 1 && d /= 31 = trace (show "Wrong amount of days/month") $ False
-  | y < 0000                   = trace (show "Year is BC")                 $ False
-  | mo < 1 || mo > 12          = trace (show "Month is unexisting")        $ False
-  | d < 1  || d > 31           = trace (show "Day is unexisting")          $ False
-  | h < 0  || h > 24           = trace (show "Hour is unexisting")         $ False
-  | mn < 0 || mn > 59          = trace (show "Minute is unexisting")       $ False
-  | otherwise                  = True
+checkDateTime (DateTime (Date y mon d) (Time h min s) i) = 
+  validYear y && validMonth mon && validDay y mon d && validHour h && validMinute min && validSecond s
+
+validYear :: Year -> Bool
+validYear (Year y) | y >= 1000 = True -- Iets met BC doen?
+                   | otherwise = False
+
+validMonth :: Month -> Bool
+validMonth (Month m) | m >= 1 && m <= 12 = True
+                     | otherwise         = False
+
+isLeapYear :: Year -> Bool
+isLeapYear (Year y) = if (mod y 4 == 0 && mod y 100 /= 0) || (mod y 400 == 0) then True else False
+
+validDay :: Year -> Month -> Day -> Bool
+validDay (Year y) (Month m) (Day d) | m == 1 && (d >= 1 && d <= 30)                                = True
+                                    | m == 2 && (d >= 1 && d <= 28 && isLeapYear (Year y) /= True) = True
+                                    | m == 2 && (d >= 1 && d <= 29 && isLeapYear (Year y))         = True
+                                    | m == 3 && (d >= 1 && d <= 31)                                = True
+                                    | m == 4 && (d >= 1 && d <= 30)                                = True
+                                    | m == 5 && (d >= 1 && d <= 31)                                = True
+                                    | m == 6 && (d >= 1 && d <= 30)                                = True
+                                    | m == 7 && (d >= 1 && d <= 31)                                = True
+                                    | m == 8 && (d >= 1 && d <= 31)                                = True
+                                    | m == 9 && (d >= 1 && d <= 30)                                = True
+                                    | m == 10 && (d >= 1 && d <= 31)                               = True
+                                    | m == 11 && (d >= 1 && d <= 30)                               = True
+                                    | m == 12 && (d >= 1 && d <= 31)                               = True
+                                    | otherwise                                                    = False
+
+
+validHour :: Hour -> Bool
+validHour (Hour h) | h >= 0 && h <= 23 = True
+                   | otherwise         = False
+
+validMinute :: Minute -> Bool
+validMinute (Minute m) | m >= 0 && m <= 59 = True
+                       | otherwise         = False
+
+validSecond :: Second -> Bool
+validSecond (Second s) | s >= 0 && s <= 59 = True
+                       | otherwise         = False
 
 -- Exercise 6
 data Calendar = Calendar {
