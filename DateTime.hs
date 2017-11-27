@@ -150,4 +150,4 @@ data EventProp = EventProp {
   dtEnd       :: DateTime,
   description :: Maybe String,
   summary     :: Maybe String,
-  location    :: String }
+  location    :: Maybe String }
