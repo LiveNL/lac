@@ -1,5 +1,7 @@
 import ParseLib.Abstract
+import Debug.Trace
 
+-- Kevin Wilbrink & Jordi Wippert
 
 -- Starting Framework
 
@@ -44,7 +46,7 @@ main :: IO ()
 main = interact (printOutput . processCheck . processInput)
     where
         processInput = map (run parseDateTime) . lines
-        processCheck = map (maybe SyntaxError (\x -> if checkDateTime x then Valid x else Invalid x))
+        processCheck a = trace (show ("a")) $ map (maybe SyntaxError (\x -> if checkDateTime x then Valid x else Invalid x)) a
         printOutput  = unlines . map show
 
 parseSecond :: Parser Char Second
@@ -71,11 +73,11 @@ parseDay = (\a b _ -> Day (test ([a]++[b]))) <$> newdigit <*> newdigit <*> symbo
 parseDate :: Parser Char Date
 parseDate = Date <$> parseYear <*> parseMonth <*> parseDay
 
-parseUtc :: Parser Char Bool
-parseUtc = parseBool <$> identifier
+parse1 :: Parser Char Bool
+parse1 = (\x -> parseBool x) <$> option (symbol 'Z') 'E'
 
-parseBool :: String -> Bool
-parseBool "Z" = True
+parseBool :: Char -> Bool
+parseBool 'Z' = True
 parseBool _   = False
 
 test :: [Int] -> Int
@@ -85,12 +87,16 @@ test l@(x:xs) = 10^i * x + test xs
 
 -- Exercise 1
 parseDateTime :: Parser Char DateTime
-parseDateTime = DateTime <$> parseDate <*> parseTime <*> parseUtc
+parseDateTime = DateTime <$> parseDate <*> parseTime <*> parse1
 
 -- Exercise 2
 run :: Parser a b -> [a] -> Maybe b
 run _ [] = Nothing
-run p cs = Just (fst (head (parse p cs)))
+run p cs = if null (parse p cs)
+           then Nothing
+           else Just (fst (head (parse p cs)))
+
+
 
 dt = DateTime { date = Date { year = Year 2016, month = Month 2, day = Day 29 },
                 time = Time { hour = Hour 03, minute = Minute 49, second = Second 18 },
@@ -99,7 +105,15 @@ dt = DateTime { date = Date { year = Year 2016, month = Month 2, day = Day 29 },
 -- Exercise 3
 printDateTime :: DateTime -> String
 printDateTime (DateTime (Date (Year x) (Month y) (Day z)) (Time (Hour a) (Minute b) (Second c)) i) =
-  show x ++ show y ++ show z ++ "T" ++ show a ++ show b ++ show c ++ show i
+  show x ++ check y ++ check z ++ "T" ++ check a ++ check b ++ check c ++ boolChar i
+
+boolChar :: Bool -> [Char]
+boolChar True = "Z"
+boolChar _    = ""
+
+check :: Int -> String
+check i | i < 10     = "0" ++ show i
+        | otherwise = show i
 
 -- Exercise 4
 parsePrint s = fmap printDateTime $ run parseDateTime s
