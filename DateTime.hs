@@ -2,6 +2,7 @@ import ParseLib.Abstract
 
 -- Kevin Wilbrink & Jordi Wippert
 
+import Debug.Trace
 -- Starting Framework
 
 
@@ -14,20 +15,20 @@ data DateTime = DateTime { date :: Date
 data Date = Date { year  :: Year
                  , month :: Month
                  , day   :: Day }
-    deriving (Eq, Ord)
+    deriving (Eq, Ord, Show)
 
-newtype Year  = Year { unYear :: Int }  deriving (Eq, Ord)
-newtype Month = Month { unMonth :: Int } deriving (Eq, Ord)
-newtype Day   = Day { unDay :: Int } deriving (Eq, Ord)
+newtype Year  = Year { unYear :: Int }  deriving (Eq, Ord, Show)
+newtype Month = Month { unMonth :: Int } deriving (Eq, Ord, Show)
+newtype Day   = Day { unDay :: Int } deriving (Eq, Ord, Show)
 
 data Time = Time { hour   :: Hour
                  , minute :: Minute
                  , second :: Second }
-    deriving (Eq, Ord)
+    deriving (Eq, Ord, Show)
 
-newtype Hour   = Hour { unHour :: Int } deriving (Eq, Ord)
-newtype Minute = Minute { unMinute :: Int } deriving (Eq, Ord)
-newtype Second = Second { unSecond :: Int } deriving (Eq, Ord)
+newtype Hour   = Hour { unHour :: Int } deriving (Eq, Ord, Show)
+newtype Minute = Minute { unMinute :: Int } deriving (Eq, Ord, Show)
+newtype Second = Second { unSecond :: Int } deriving (Eq, Ord, Show)
 
 
 -- | The main interaction function. Used for IO, do not edit.
@@ -49,25 +50,25 @@ main = interact (printOutput . processCheck . processInput)
         printOutput  = unlines . map show
 
 parseSecond :: Parser Char Second
-parseSecond = (\a b -> Second (test ([a]++[b]))) <$> newdigit <*> newdigit
+parseSecond = (\a b -> Second (mergeInts (a:[b]))) <$> newdigit <*> newdigit
 
 parseMinute :: Parser Char Minute
-parseMinute = (\a b -> Minute (test ([a]++[b]))) <$> newdigit <*> newdigit
+parseMinute = (\a b -> Minute (mergeInts (a:[b]))) <$> newdigit <*> newdigit
 
 parseHour :: Parser Char Hour
-parseHour = (\a b -> Hour (test ([a]++[b]))) <$> newdigit <*> newdigit
+parseHour = (\a b -> Hour (mergeInts (a:[b]))) <$> newdigit <*> newdigit
 
 parseTime :: Parser Char Time
 parseTime = Time <$> parseHour <*> parseMinute <*> parseSecond
 
 parseYear :: Parser Char Year
-parseYear = (\a b c d -> Year (test ([a]++[b]++[c]++[d]))) <$> newdigit <*> newdigit <*> newdigit <*> newdigit
+parseYear = (\a b c d -> Year (mergeInts (a:b:c:[d]))) <$> newdigit <*> newdigit <*> newdigit <*> newdigit
 
 parseMonth :: Parser Char Month
-parseMonth = (\a b -> Month (test ([a]++[b]))) <$> newdigit <*> newdigit
+parseMonth = (\a b -> Month (mergeInts (a:[b]))) <$> newdigit <*> newdigit
 
 parseDay :: Parser Char Day
-parseDay = (\a b _ -> Day (test ([a]++[b]))) <$> newdigit <*> newdigit <* symbol 'T'
+parseDay = (\a b _ -> Day (mergeInts  (a:[b]))) <$> newdigit <*> newdigit <*> symbol 'T'
 
 parseDate :: Parser Char Date
 parseDate = Date <$> parseYear <*> parseMonth <*> parseDay
@@ -79,9 +80,9 @@ parseBool :: Char -> Bool
 parseBool 'Z' = True
 parseBool _   = False
 
-test :: [Int] -> Int
-test []       = 0
-test l@(x:xs) = 10^i * x + test xs
+mergeInts :: [Int] -> Int
+mergeInts []       = 0
+mergeInts l@(x:xs) = 10^i * x + mergeInts xs
   where i = (length l) - 1
 
 -- Exercise 1
@@ -104,18 +105,19 @@ dt = DateTime { date = Date { year = Year 2016, month = Month 2, day = Day 29 },
 -- Exercise 3
 printDateTime :: DateTime -> String
 printDateTime (DateTime (Date (Year x) (Month y) (Day z)) (Time (Hour a) (Minute b) (Second c)) i) =
-  show x ++ check y ++ check z ++ "T" ++ check a ++ check b ++ check c ++ boolChar i
-
+  concat (show x : (f' y) : (f' z) : "T" : (f' a) : (f' b) : (f' c) : (boolChar i) : [])
+    where f' f = if f < 10
+                 then "0" ++ (show f)
+                 else show f
+                                  
 boolChar :: Bool -> [Char]
 boolChar True = "Z"
 boolChar _    = ""
 
-check :: Int -> String
-check i | i < 10     = "0" ++ show i
-        | otherwise = show i
-
 -- Exercise 4
 parsePrint s = fmap printDateTime $ run parseDateTime s
+
+parseCheck s = checkDateTime <$> run parseDateTime s
 
 -- Exercise 5
 checkDateTime :: DateTime -> Bool
@@ -161,5 +163,23 @@ validMinute (Minute m) | m >= 0 && m <= 59 = True
 validSecond :: Second -> Bool
 validSecond (Second s) | s >= 0 && s <= 59 = True
                        | otherwise         = False
--- Exercise 6
 
+-- Exercise 6
+data Calendar = Calendar {
+  calProp :: [CalProp],
+  event   :: [Event] }
+
+data CalProp = CalProp {
+  prodId  :: String,
+  version :: Float}
+
+newtype Event = Event { eventProp :: [EventProp] }
+
+data EventProp = EventProp {
+  dtStamp     :: DateTime,
+  uid         :: String,
+  dtStart     :: DateTime,
+  dtEnd       :: DateTime,
+  description :: Maybe String,
+  summary     :: Maybe String,
+  location    :: String }
