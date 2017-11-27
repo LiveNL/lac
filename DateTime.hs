@@ -1,12 +1,9 @@
 import Prelude hiding ((<*))
 import ParseLib.Abstract
 
-
 -- Kevin Wilbrink & Jordi Wippert
 
-import Debug.Trace
 -- Starting Framework
-
 
 -- | "Target" datatype for the DateTime parser, i.e, the parser should produce elements of this type.
 data DateTime = DateTime { date :: Date
@@ -51,29 +48,17 @@ main = interact (printOutput . processCheck . processInput)
         processCheck = map (maybe SyntaxError (\x -> if checkDateTime x then Valid x else Invalid x))
         printOutput  = unlines . map show
 
-parseSecond :: Parser Char Second
-parseSecond = (\a b -> Second (mergeInts (a:[b]))) <$> newdigit <*> newdigit
+parse2D :: Parser Char Int
+parse2D = (\a b -> (mergeInts (a:[b]))) <$> newdigit <*> newdigit
 
-parseMinute :: Parser Char Minute
-parseMinute = (\a b -> Minute (mergeInts (a:[b]))) <$> newdigit <*> newdigit
-
-parseHour :: Parser Char Hour
-parseHour = (\a b -> Hour (mergeInts (a:[b]))) <$> newdigit <*> newdigit
+parse4D :: Parser Char Int
+parse4D = (\a b c d -> (mergeInts (a:b:c:[d]))) <$> newdigit <*> newdigit <*> newdigit <*> newdigit
 
 parseTime :: Parser Char Time
-parseTime = Time <$> parseHour <*> parseMinute <*> parseSecond
-
-parseYear :: Parser Char Year
-parseYear = (\a b c d -> Year (mergeInts (a:b:c:[d]))) <$> newdigit <*> newdigit <*> newdigit <*> newdigit
-
-parseMonth :: Parser Char Month
-parseMonth = (\a b -> Month (mergeInts (a:[b]))) <$> newdigit <*> newdigit
-
-parseDay :: Parser Char Day
-parseDay = (\a b -> Day (mergeInts  (a:[b]))) <$> newdigit <*> newdigit <* symbol 'T'
+parseTime = (\a b c -> Time (Hour a) (Minute b) (Second c)) <$> parse2D <*> parse2D <*> parse2D
 
 parseDate :: Parser Char Date
-parseDate = Date <$> parseYear <*> parseMonth <*> parseDay
+parseDate = (\a b c -> Date (Year a) (Month b) (Day c)) <$> parse4D <*> parse2D <*> parse2D <* symbol 'T'
 
 parseUtc :: Parser Char Bool
 parseUtc = parseBool <$> option (symbol 'Z') ' '
@@ -85,7 +70,7 @@ parseBool _   = False
 mergeInts :: [Int] -> Int
 mergeInts []       = 0
 mergeInts l@(x:xs) = 10^i * x + mergeInts xs
-  where i = (length l) - 1
+  where i = length l - 1
 
 -- Exercise 1
 parseDateTime :: Parser Char DateTime
@@ -100,11 +85,11 @@ run p cs | null (parse p cs) = Nothing
 -- Exercise 3
 printDateTime :: DateTime -> String
 printDateTime (DateTime (Date (Year x) (Month y) (Day z)) (Time (Hour a) (Minute b) (Second c)) i) =
-  concat (show x : (f' y) : (f' z) : "T" : (f' a) : (f' b) : (f' c) : (boolChar i) : [])
-    where f' f | f < 10    = "0" ++ (show f)
+  concat [show x, f' y, f' z, "T", f' a, f' b, f' c, boolChar i]
+    where f' f | f < 10    = "0" ++ show f
                | otherwise = show f
 
-boolChar :: Bool -> [Char]
+boolChar :: Bool -> String
 boolChar True = "Z"
 boolChar _    = ""
 
@@ -113,7 +98,7 @@ parsePrint s = fmap printDateTime $ run parseDateTime s
 
 -- Exercise 5
 checkDateTime :: DateTime -> Bool
-checkDateTime (DateTime (Date y mon d) (Time h (Minute min) (Second s)) i) =
+checkDateTime (DateTime (Date y mon d) (Time h (Minute min) (Second s)) _) =
   validYear y && validMonth mon && validDay y mon d && validHour h && validMS min && validMS s
 
 validYear :: Year -> Bool
