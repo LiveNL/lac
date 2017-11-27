@@ -1,5 +1,7 @@
 import ParseLib.Abstract
 
+-- Kevin Wilbrink & Jordi Wippert
+
 import Debug.Trace
 -- Starting Framework
 
@@ -8,7 +10,7 @@ import Debug.Trace
 data DateTime = DateTime { date :: Date
                          , time :: Time
                          , utc :: Bool }
-    deriving (Eq, Ord, Show)
+    deriving (Eq, Ord)
 
 data Date = Date { year  :: Year
                  , month :: Month
@@ -32,8 +34,8 @@ newtype Second = Second { unSecond :: Int } deriving (Eq, Ord, Show)
 -- | The main interaction function. Used for IO, do not edit.
 data Result = SyntaxError | Invalid DateTime | Valid DateTime deriving (Eq, Ord)
 
---instance Show DateTime where
- --   show = printDateTime
+instance Show DateTime where
+    show = printDateTime
 
 instance Show Result where
     show SyntaxError = "date/time with wrong syntax"
@@ -127,4 +129,21 @@ checkDateTime (DateTime (Date (Year y) (Month mo) (Day d)) (Time (Hour h) (Minut
   | otherwise                  = True
 
 -- Exercise 6
+data Calendar = Calendar {
+  calProp :: [CalProp],
+  event   :: [Event] }
 
+data CalProp = CalProp {
+  prodId  :: String,
+  version :: Float}
+
+newtype Event = Event { eventProp :: [EventProp] }
+
+data EventProp = EventProp {
+  dtStamp     :: DateTime,
+  uid         :: String,
+  dtStart     :: DateTime,
+  dtEnd       :: DateTime,
+  description :: Maybe String,
+  summary     :: Maybe String,
+  location    :: String }
