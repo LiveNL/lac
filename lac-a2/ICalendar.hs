@@ -1,5 +1,6 @@
 module ICalendar where
 
+import Prelude hiding ((<*))
 import ParseLib.Abstract
 import Data.Maybe
 
@@ -41,6 +42,34 @@ data VEvent = VEvent { dtStamp     :: DateTime
                      , location    :: Maybe String }
     deriving Eq
 
+-- DateTime parseing, copied from exercise 1
+parse2D :: Parser Char Int
+parse2D = (\a b -> (mergeInts (a:[b]))) <$> newdigit <*> newdigit
+
+parse4D :: Parser Char Int
+parse4D = (\a b c d -> (mergeInts (a:b:c:[d]))) <$> newdigit <*> newdigit <*> newdigit <*> newdigit
+
+parseTime :: Parser Char Time
+parseTime = (\a b c -> Time (Hour a) (Minute b) (Second c)) <$> parse2D <*> parse2D <*> parse2D
+
+parseDate :: Parser Char Date
+parseDate = (\a b c -> Date (Year a) (Month b) (Day c)) <$> parse4D <*> parse2D <*> parse2D <* symbol 'T'
+
+parseUtc :: Parser Char Bool
+parseUtc = parseBool <$> option (symbol 'Z') ' '
+
+parseBool :: Char -> Bool
+parseBool 'Z' = True
+parseBool _   = False
+
+mergeInts :: [Int] -> Int
+mergeInts []       = 0
+mergeInts l@(x:xs) = 10^i * x + mergeInts xs
+  where i = length l - 1
+
+parseDateTime :: Parser Char DateTime
+parseDateTime = DateTime <$> parseDate <*> parseTime <*> parseUtc
+-- End -- DateTime parseing, copied from exercise 1
 
 -- "Main" block, DO NOT EDIT.
 -- If you want to run the parser + pretty-printing, rename this module (first line) to "Main".
