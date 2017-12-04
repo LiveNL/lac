@@ -85,20 +85,15 @@ main = do
     res <- readCalendar "examples/rooster_infotc.ics"
     putStrLn $ maybe "Calendar parsing error" (ppMonth (Year 2012) (Month 11)) res
 
-
-
-
 -- Exercise 1
-data Token = Token
+data Token = Token String
     deriving (Eq, Ord, Show)
 
 scanCalendar :: Parser Char [Token]
-scanCalendar = undefined
+scanCalendar = many (Token <$> greedy (satisfy (\x -> x /= '\r')) <* symbol '\r' <* symbol '\n')
 
 parseCalendar :: Parser Token Calendar
 parseCalendar = undefined
-
-
 
 -- Exercise 2
 readCalendar :: FilePath -> IO (Maybe Calendar)
