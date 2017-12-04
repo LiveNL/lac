@@ -1,5 +1,7 @@
 module ICalendar where
 
+-- Kevin Wilbrink & Jordi Wippert
+--
 import Prelude hiding ((<*), (*>), (<$), ($>))
 import ParseLib.Abstract
 import Data.Maybe
