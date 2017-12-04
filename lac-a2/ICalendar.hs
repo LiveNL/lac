@@ -31,7 +31,7 @@ newtype Second = Second { unSecond :: Int } deriving (Eq, Ord)
 
 data Calendar = Calendar { prodId :: String
                          , events :: [VEvent] }
-    deriving Eq
+    deriving (Eq, Show)
 
 data VEvent = VEvent { dtStamp     :: DateTime
                      , uid         :: String
@@ -40,7 +40,7 @@ data VEvent = VEvent { dtStamp     :: DateTime
                      , description :: Maybe String
                      , summary     :: Maybe String
                      , location    :: Maybe String }
-    deriving Eq
+    deriving (Eq, Show)
 
 -- DateTime parseing, copied from exercise 1
 parse2D :: Parser Char Int
@@ -99,7 +99,7 @@ data Token = TProdid  String
     deriving (Eq, Ord, Show)
 
 scanCalendar :: Parser Char [Token]
-scanCalendar = many ((\x y -> toToken x y) <$> identifier <* symbol ':' <*> greedy (satisfy (\x -> x /= '\r')) <* symbol '\r' <* symbol '\n')
+scanCalendar = many (toToken <$> identifier <* symbol ':' <*> greedy (satisfy (\x -> x /= '\r')) <* symbol '\r' <* symbol '\n')
 
 toToken :: String -> String -> Token
 toToken a b = case a of
@@ -115,7 +115,21 @@ toToken a b = case a of
   _         -> Rest
 
 parseCalendar :: Parser Token Calendar
-parseCalendar = undefined
+parseCalendar = Calendar <$> parseProdID <*> parseEvents
+
+parseProdID :: Parser Token String
+parseProdID = toProdId <$> satisfy isProdId
+
+isProdId :: Token -> Bool
+isProdId (TProdid _) = True
+isProdId _ = False
+
+toProdId :: Token -> String
+toProdId (TProdid x) = x
+toProdId _ = error "prodId"
+
+parseEvents :: Parser Token [VEvent]
+parseEvents = succeed []
 
 -- Exercise 2
 readCalendar :: FilePath -> IO (Maybe Calendar)
