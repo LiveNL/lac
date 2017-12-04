@@ -1,6 +1,6 @@
 module ICalendar where
 
-import Prelude hiding ((<*), (*>))
+import Prelude hiding ((<*), (*>), (<$), ($>))
 import ParseLib.Abstract
 import Data.Maybe
 
@@ -86,15 +86,17 @@ main = do
     putStrLn $ maybe "Calendar parsing error" (ppMonth (Year 2012) (Month 11)) res
 
 -- Exercise 1
-data Token = TProdid  String
-           | TVersion String
-           | TBegin   String
-           | TSummary String
-           | TUID     String
-           | TDTStamp String
-           | TDTStart String
-           | TDTEnd   String
-           | TEnd     String
+data Token = TProdid      String
+           | TVersion     String
+           | TBegin       String
+           | TSummary     String
+           | TDescription String
+           | TLocation    String
+           | TUID         String
+           | TDTStamp     String
+           | TDTStart     String
+           | TDTEnd       String
+           | TEnd         String
            | Rest
     deriving (Eq, Ord, Show)
 
@@ -103,33 +105,82 @@ scanCalendar = many (toToken <$> identifier <* symbol ':' <*> greedy (satisfy (\
 
 toToken :: String -> String -> Token
 toToken a b = case a of
-  "BEGIN"   -> TBegin   b
-  "PRODID"  -> TProdid  b
-  "VERSION" -> TVersion b
-  "SUMMARY" -> TSummary b
-  "UID"     -> TUID     b
-  "DTSTAMP" -> TDTStamp b
-  "DTSTART" -> TDTStart b
-  "DTEND"   -> TDTEnd   b
-  "END"     -> TEnd     b
-  _         -> Rest
+  "BEGIN"       -> TBegin       b
+  "PRODID"      -> TProdid      b
+  "VERSION"     -> TVersion     b
+  "SUMMARY"     -> TSummary     b
+  "DESCRIPTION" -> TDescription b
+  "LOCATION"    -> TLocation    b
+  "UID"         -> TUID         b
+  "DTSTAMP"     -> TDTStamp     b
+  "DTSTART"     -> TDTStart     b
+  "DTEND"       -> TDTEnd       b
+  "END"         -> TEnd         b
+  _             -> Rest
 
 parseCalendar :: Parser Token Calendar
-parseCalendar = Calendar <$> parseProdID <*> parseEvents
+parseCalendar = Calendar <$ (satisfy isBegin) <*> parseProdID <* (satisfy isBegin) <*> many toEvent <* (satisfy isEnd)
 
 parseProdID :: Parser Token String
-parseProdID = toProdId <$> satisfy isProdId
+parseProdID = toString <$> satisfy isProdId
 
 isProdId :: Token -> Bool
 isProdId (TProdid _) = True
-isProdId _ = False
+isProdId _           = False
 
-toProdId :: Token -> String
-toProdId (TProdid x) = x
-toProdId _ = error "prodId"
+toEvent :: Parser Token VEvent
+toEvent = VEvent <$ (satisfy isBegin) <*> parseDT <*> parseUID <*> parseDT <*> parseDT <*> optional parseMaybe <*> optional parseMaybe <*> optional parseMaybe <* (satisfy isEnd)
 
-parseEvents :: Parser Token [VEvent]
-parseEvents = succeed []
+parseUID :: Parser Token String
+parseUID = toString <$> satisfy isUID
+
+isUID :: Token -> Bool
+isUID (TUID _) = True
+isUID _        = False
+
+parseDT :: Parser Token DateTime
+parseDT = toDT <$> satisfy isDt
+
+toDT :: Token -> DateTime
+toDT (TDTStamp x) = fst (head (parse parseDateTime x))
+toDT (TDTStart x) = fst (head (parse parseDateTime x))
+toDT (TDTEnd x)   = fst (head (parse parseDateTime x))
+toDT _            = error "TimeStamp"
+
+isDt :: Token -> Bool
+isDt (TDTStamp _) = True
+isDt (TDTStart _) = True
+isDt (TDTEnd _)   = True
+isDt _            = False
+
+isBegin :: Token -> Bool
+isBegin (TBegin _)   = True
+isBegin (TVersion _) = True
+isBegin _            = False
+
+isEvent :: Token -> Bool
+isEvent (TEnd _) = False
+isEvent _        = True
+
+isEnd :: Token -> Bool
+isEnd (TEnd _) = True
+_              = False
+
+parseMaybe :: Parser Token String
+parseMaybe = toString <$> satisfy isMaybe
+
+toString :: Token -> String
+toString (TSummary x)     = x
+toString (TDescription x) = x
+toString (TLocation x)    = x
+toString (TProdid x)      = x
+toString (TUID x)         = x
+
+isMaybe :: Token -> Bool
+isMaybe (TSummary _)     = True
+isMaybe (TDescription _) = True
+isMaybe (TLocation _)    = True
+isMaybe _                = False
 
 -- Exercise 2
 readCalendar :: FilePath -> IO (Maybe Calendar)
