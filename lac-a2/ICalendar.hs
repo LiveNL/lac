@@ -144,7 +144,7 @@ isProdId (TProdid _) = True
 isProdId _           = False
 
 toEvent :: Parser Token VEvent
-toEvent = VEvent <$ (satisfy isBegin) <*> parseDT <*> parseUID <*> parseDT <*> parseDT <*> optional parseMaybe <*> optional parseMaybe <*> optional parseMaybe <* (satisfy isEnd)
+toEvent = VEvent <$ (satisfy isBegin) <*> parseDT <*> parseUID <*> parseDT <*> parseDT <*> optional parseDesc <*> optional parseSummary <*> optional parseLocation <* (satisfy isEnd)
 
 parseUID :: Parser Token String
 parseUID = toString <$> satisfy isUID
@@ -181,8 +181,26 @@ isEnd :: Token -> Bool
 isEnd (TEnd _) = True
 _              = False
 
-parseMaybe :: Parser Token String
-parseMaybe = toString <$> satisfy isMaybe
+parseDesc :: Parser Token String
+parseDesc = toString <$> satisfy isDesc
+
+isDesc :: Token -> Bool
+isDesc (TDescription _) = True
+isDesc _ = False
+
+parseSummary :: Parser Token String
+parseSummary = toString <$> satisfy isSummary
+
+isSummary :: Token -> Bool
+isSummary (TSummary _) = True
+isSummary _ = False
+
+parseLocation :: Parser Token String
+parseLocation = toString <$> satisfy isLocation
+
+isLocation :: Token -> Bool
+isLocation (TLocation _) = True
+isLocation _ = False
 
 toString :: Token -> String
 toString (TSummary x)     = x
@@ -190,12 +208,6 @@ toString (TDescription x) = x
 toString (TLocation x)    = x
 toString (TProdid x)      = x
 toString (TUID x)         = x
-
-isMaybe :: Token -> Bool
-isMaybe (TSummary _)     = True
-isMaybe (TDescription _) = True
-isMaybe (TLocation _)    = True
-isMaybe _                = False
 
 -- Exercise 2
 readCalendar :: FilePath -> IO (Maybe Calendar)
@@ -220,7 +232,8 @@ printCalendar :: Calendar -> String
 printCalendar (Calendar p e) =
   "BEGIN:VCALENDAR\r\n"     ++
   "PRODID:" ++ p ++ "\r\n"  ++
-  concat (map printEvent e) ++
+  "VERSION:2.0" ++ "\r\n"  ++
+   concat (map printEvent e) ++
   "END:VCALENDAR\r\n"
 
 printEvent :: VEvent -> String
