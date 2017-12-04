@@ -1,6 +1,6 @@
 module ICalendar where
 
-import Prelude hiding ((<*))
+import Prelude hiding ((<*), (*>))
 import ParseLib.Abstract
 import Data.Maybe
 
@@ -86,11 +86,33 @@ main = do
     putStrLn $ maybe "Calendar parsing error" (ppMonth (Year 2012) (Month 11)) res
 
 -- Exercise 1
-data Token = Token String
+data Token = TProdid  String
+           | TVersion String
+           | TBegin   String
+           | TSummary String
+           | TUID     String
+           | TDTStamp String
+           | TDTStart String
+           | TDTEnd   String
+           | TEnd     String
+           | Rest
     deriving (Eq, Ord, Show)
 
 scanCalendar :: Parser Char [Token]
-scanCalendar = many (Token <$> greedy (satisfy (\x -> x /= '\r')) <* symbol '\r' <* symbol '\n')
+scanCalendar = many ((\x y -> toToken x y) <$> identifier <* symbol ':' <*> greedy (satisfy (\x -> x /= '\r')) <* symbol '\r' <* symbol '\n')
+
+toToken :: String -> String -> Token
+toToken a b = case a of
+  "BEGIN"   -> TBegin   b
+  "PRODID"  -> TProdid  b
+  "VERSION" -> TVersion b
+  "SUMMARY" -> TSummary b
+  "UID"     -> TUID     b
+  "DTSTAMP" -> TDTStamp b
+  "DTSTART" -> TDTStart b
+  "DTEND"   -> TDTEnd   b
+  "END"     -> TEnd     b
+  _         -> Rest
 
 parseCalendar :: Parser Token Calendar
 parseCalendar = undefined
