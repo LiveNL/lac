@@ -34,7 +34,7 @@ newtype Second = Second { unSecond :: Int } deriving (Eq, Ord)
 
 data Calendar = Calendar { prodId :: String
                          , events :: [VEvent] }
-    deriving (Eq, Show)
+    deriving Eq
 
 data VEvent = VEvent { dtStamp     :: DateTime
                      , uid         :: String
@@ -43,7 +43,7 @@ data VEvent = VEvent { dtStamp     :: DateTime
                      , description :: Maybe String
                      , summary     :: Maybe String
                      , location    :: Maybe String }
-    deriving (Eq, Show)
+    deriving Eq
 
 -- DateTime parseing, copied from exercise 1
 parse2D :: Parser Char Int
@@ -217,10 +217,10 @@ cal = Calendar { prodId = "-//hacksw/handcal//NONSGML v1.0//EN", events = [event
 
 -- DO NOT use a derived Show instance. Your printing style needs to be nicer than that :)
 printCalendar :: Calendar -> String
-printCalendar (Calendar p e) = 
+printCalendar (Calendar p e) =
   "BEGIN:VCALENDAR\r\n"     ++
   "PRODID:" ++ p ++ "\r\n"  ++
-  concat (map printEvent e) ++ 
+  concat (map printEvent e) ++
   "END:VCALENDAR\r\n"
 
 printEvent :: VEvent -> String
@@ -252,7 +252,7 @@ checkOverlapping (Calendar _ e) = check' e
 check' :: [VEvent] -> Bool
 check' (_:[]) = False
 check' ((VEvent _ _ start1 end1 _ _ _):y@((VEvent _ _ start2 end2 _ _ _):xs)) | start1 >= start2 && end1 >= start2 = True
-                                                                              | otherwise                          = check' (y++xs) 
+                                                                              | otherwise                          = check' (y++xs)
 
 timeSpent :: String -> Calendar -> Int
 timeSpent f (Calendar p e) = undefined --  [ev | ev@(VEvent _ _ start end _ sum _) <- e, f == sum]
