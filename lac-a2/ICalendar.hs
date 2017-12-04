@@ -5,6 +5,7 @@ module ICalendar where
 import Prelude hiding ((<*), (*>), (<$), ($>))
 import ParseLib.Abstract
 import Data.Maybe
+import System.IO
 
 
 data DateTime = DateTime { date :: Date
@@ -71,6 +72,16 @@ mergeInts l@(x:xs) = 10^i * x + mergeInts xs
 
 parseDateTime :: Parser Char DateTime
 parseDateTime = DateTime <$> parseDate <*> parseTime <*> parseUtc
+
+printDateTime :: DateTime -> String
+printDateTime (DateTime (Date (Year x) (Month y) (Day z)) (Time (Hour a) (Minute b) (Second c)) i) =
+  concat [show x, f' y, f' z, "T", f' a, f' b, f' c, boolChar i]
+    where f' f | f < 10    = "0" ++ show f
+               | otherwise = show f
+
+boolChar :: Bool -> String
+boolChar True = "Z"
+boolChar _    = ""
 -- End -- DateTime parseing, copied from exercise 1
 
 -- "Main" block, DO NOT EDIT.
@@ -119,6 +130,8 @@ toToken a b = case a of
   "DTEND"       -> TDTEnd       b
   "END"         -> TEnd         b
   _             -> Rest
+
+-- testCalendar fst (head (parse scanCalendar "BEGIN:VCALENDAR\r\nPRODID:-//hacksw/handcal//NONSGML v1.0//EN\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nSUMMARY:Bastille Day Party\r\nUID:19970610T172345Z-AF23B2@example.com\r\nDTSTAMP:19970610T172345Z\r\nDTSTART:19970714T170000Z\r\nDTEND:19970715T040000Z\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"))
 
 parseCalendar :: Parser Token Calendar
 parseCalendar = Calendar <$ (satisfy isBegin) <*> parseProdID <* (satisfy isBegin) <*> many toEvent <* (satisfy isEnd)
@@ -186,29 +199,63 @@ isMaybe _                = False
 
 -- Exercise 2
 readCalendar :: FilePath -> IO (Maybe Calendar)
-readCalendar = undefined
-
+readCalendar p = do f <- openFile p ReadMode
+                    d <- hGetContents f
+                    return (recognizeCalendar d)
 
 -- Exercise 3
+
+event = VEvent { dtStamp           = fst (head (parse parseDateTime "20100607T175445Z"))
+                     , uid         = "UID"
+                     , dtStart     = fst (head (parse parseDateTime "19971221T142345Z"))
+                     , dtEnd       = fst (head (parse parseDateTime "20071012T213245Z"))
+                     , description = Just "description"
+                     , summary     = Just "summary"
+                     , location    = Nothing  }
+
+cal = Calendar { prodId = "-//hacksw/handcal//NONSGML v1.0//EN", events = [event] }
+
 -- DO NOT use a derived Show instance. Your printing style needs to be nicer than that :)
 printCalendar :: Calendar -> String
-printCalendar = undefined
+printCalendar (Calendar p e) = 
+  "BEGIN:VCALENDAR\r\n"     ++
+  "PRODID:" ++ p ++ "\r\n"  ++
+  concat (map printEvent e) ++ 
+  "END:VCALENDAR\r\n"
 
+printEvent :: VEvent -> String
+printEvent (VEvent dtStamp uid dtStart dtEnd des sum loc) =
+  "BEGIN:VEVENT\r\n"                            ++
+  "UID:"     ++ uid                   ++ "\r\n" ++
+  "DTSTAMP:" ++ printDateTime dtStamp ++ "\r\n" ++
+  "DTSTART:" ++ printDateTime dtStart ++ "\r\n" ++
+  "DTEND:"   ++ printDateTime dtEnd   ++ "\r\n" ++
+  printMaybe "SUMMARY:"     sum                 ++
+  printMaybe "DESCRIPTION:" des                 ++
+  printMaybe "LOCATION:"    loc                 ++
+  "END:VEVENT\r\n"
+
+printMaybe :: String -> Maybe String -> String
+printMaybe _ Nothing  = ""
+printMaybe x (Just y) = x ++ y ++ "\r\n"
 
 -- Exercise 4
 countEvents :: Calendar -> Int
-countEvents = undefined
+countEvents (Calendar _ e) = length e
 
 findEvents :: DateTime -> Calendar -> [VEvent]
-findEvents = undefined
+findEvents dt (Calendar _ e) = [ev | ev@(VEvent _ _ start end _ _ _) <- e, dt >= start && dt < end]
 
 checkOverlapping :: Calendar -> Bool
-checkOverlapping = undefined
+checkOverlapping (Calendar _ e) = check' e
+
+check' :: [VEvent] -> Bool
+check' (_:[]) = False
+check' ((VEvent _ _ start1 end1 _ _ _):y@((VEvent _ _ start2 end2 _ _ _):xs)) | start1 >= start2 && end1 >= start2 = True
+                                                                              | otherwise                          = check' (y++xs) 
 
 timeSpent :: String -> Calendar -> Int
-timeSpent = undefined
-
-
+timeSpent f (Calendar p e) = undefined --  [ev | ev@(VEvent _ _ start end _ sum _) <- e, f == sum]
 
 -- Exercise 5
 ppMonth :: Year -> Month -> Calendar -> String
