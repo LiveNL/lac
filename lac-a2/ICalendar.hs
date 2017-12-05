@@ -264,8 +264,8 @@ checkOverlapping (Calendar _ e) = check' e
 
 check' :: [VEvent] -> Bool
 check' (_:[]) = False
-check' ((VEvent _ _ start1 end1 _ _ _):y@((VEvent _ _ start2 end2 _ _ _):xs)) | start1 >= start2 && end1 >= start2 = True
-                                                                              | otherwise                          = check' (y++xs)
+check' ((VEvent _ _ start1 end1 _ _ _):y@((VEvent _ _ start2 end2 _ _ _):xs)) | (start1 < start2 && start2 < end1) || (start1 < end2 && end2 <= end1) || (start2 < start1  && end2 > end1) = True
+                                                                              | otherwise                                                                                                  = check' (y++xs)
 
 timeSpent :: String -> Calendar -> Int
 timeSpent f (Calendar p e) = undefined --  [ev | ev@(VEvent _ _ start end _ sum _) <- e, f == sum]
