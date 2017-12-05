@@ -6,6 +6,9 @@ import Prelude hiding ((<*), (*>), (<$), ($>))
 import ParseLib.Abstract
 import Data.Maybe
 import System.IO
+import Debug.Trace
+import Data.List
+import Text.PrettyPrint.Boxes
 
 
 data DateTime = DateTime { date :: Date
@@ -113,8 +116,15 @@ data Token = TProdid      String
            | Rest
     deriving (Eq, Ord, Show)
 
+isSpace :: Char -> Bool
+isSpace ' ' = True
+isSpace _   = False
+
+spaces :: Parser Char String 
+spaces =  greedy (satisfy isSpace)
+
 scanCalendar :: Parser Char [Token]
-scanCalendar = many (toToken <$> identifier <* symbol ':' <*> greedy (satisfy (\x -> x /= '\r')) <* symbol '\r' <* symbol '\n')
+scanCalendar = many (toToken <$ spaces <*> identifier <* option (symbol ':') ':' <*> greedy (satisfy (\x -> x /= '\r')) <* symbol '\r' <* symbol '\n')
 
 toToken :: String -> String -> Token
 toToken a b = case a of
@@ -134,7 +144,7 @@ toToken a b = case a of
 -- testCalendar fst (head (parse scanCalendar "BEGIN:VCALENDAR\r\nPRODID:-//hacksw/handcal//NONSGML v1.0//EN\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nSUMMARY:Bastille Day Party\r\nUID:19970610T172345Z-AF23B2@example.com\r\nDTSTAMP:19970610T172345Z\r\nDTSTART:19970714T170000Z\r\nDTEND:19970715T040000Z\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"))
 
 parseCalendar :: Parser Token Calendar
-parseCalendar = Calendar <$ (satisfy isBegin) <*> parseProdID <* (satisfy isBegin) <*> many toEvent <* (satisfy isEnd)
+parseCalendar = Calendar <$ (satisfy isBegin) <*> parseProdID <* option parseRest "" <* (satisfy isBegin) <*> many toEvent <* (satisfy isEnd)
 
 parseProdID :: Parser Token String
 parseProdID = toString <$> satisfy isProdId
@@ -144,7 +154,7 @@ isProdId (TProdid _) = True
 isProdId _           = False
 
 toEvent :: Parser Token VEvent
-toEvent = VEvent <$ (satisfy isBegin) <*> parseDT <*> parseUID <*> parseDT <*> parseDT <*> optional parseDesc <*> optional parseSummary <*> optional parseLocation <* (satisfy isEnd)
+toEvent = VEvent <$ (satisfy isBegin) <*> parseDT <*> parseUID <* option parseRest "" <*> parseDT <*> parseDT <*> optional parseDesc <* option parseRest "" <*> optional parseSummary <* option parseRest "" <*> optional parseLocation <* option parseRest "" <* (satisfy isEnd)
 
 parseUID :: Parser Token String
 parseUID = toString <$> satisfy isUID
@@ -179,7 +189,7 @@ isEvent _        = True
 
 isEnd :: Token -> Bool
 isEnd (TEnd _) = True
-_              = False
+isEnd _        = False
 
 parseDesc :: Parser Token String
 parseDesc = toString <$> satisfy isDesc
@@ -202,12 +212,20 @@ isLocation :: Token -> Bool
 isLocation (TLocation _) = True
 isLocation _ = False
 
+parseRest :: Parser Token String
+parseRest = toString <$> satisfy isRest
+
+isRest :: Token -> Bool
+isRest (Rest) = True
+isRest _ = False
+
 toString :: Token -> String
 toString (TSummary x)     = x
 toString (TDescription x) = x
 toString (TLocation x)    = x
 toString (TProdid x)      = x
 toString (TUID x)         = x
+toString (Rest)           = ""
 
 -- Exercise 2
 readCalendar :: FilePath -> IO (Maybe Calendar)
@@ -215,18 +233,12 @@ readCalendar p = do f <- openFile p ReadMode
                     d <- hGetContents f
                     return (recognizeCalendar d)
 
+readCalendar' :: FilePath -> IO String
+readCalendar' p = do f <- openFile p ReadMode
+                     d <- hGetContents f
+                     return d
+
 -- Exercise 3
-
-event = VEvent { dtStamp           = fst (head (parse parseDateTime "20100607T175445Z"))
-                     , uid         = "UID"
-                     , dtStart     = fst (head (parse parseDateTime "19971221T142345Z"))
-                     , dtEnd       = fst (head (parse parseDateTime "20071012T213245Z"))
-                     , description = Just "description"
-                     , summary     = Just "summary"
-                     , location    = Nothing  }
-
-cal = Calendar { prodId = "-//hacksw/handcal//NONSGML v1.0//EN", events = [event] }
-
 -- DO NOT use a derived Show instance. Your printing style needs to be nicer than that :)
 printCalendar :: Calendar -> String
 printCalendar (Calendar p e) =
@@ -260,12 +272,21 @@ findEvents :: DateTime -> Calendar -> [VEvent]
 findEvents dt (Calendar _ e) = [ev | ev@(VEvent _ _ start end _ _ _) <- e, dt >= start && dt < end]
 
 checkOverlapping :: Calendar -> Bool
-checkOverlapping (Calendar _ e) = check' e
+checkOverlapping (Calendar _ e) | length e <= 2 = check2 [e]
+                                | otherwise =  check2 (f' 2 e)
 
-check' :: [VEvent] -> Bool
-check' (_:[]) = False
-check' ((VEvent _ _ start1 end1 _ _ _):y@((VEvent _ _ start2 end2 _ _ _):xs)) | (start1 < start2 && start2 < end1) || (start1 < end2 && end2 <= end1) || (start2 < start1  && end2 > end1) = True
-                                                                              | otherwise                                                                                                  = check' (y++xs)
+check2 :: [[VEvent]] -> Bool
+check2 []     = False
+check2 (x:xs) = if o h t then True else check2 xs
+  where h = head x
+        t = last x
+        o (VEvent _ _ start1 end1 _ _ _) (VEvent _ _ start2 end2 _ _ _) | (start1 < end2 && start2 < end1) || (end1 == start2) || (start1 == end2) = True
+                                                                        | otherwise = False
+
+f' :: (Eq t, Num t) => t -> [a] -> [[a]]
+f' 0 _  = [[]]
+f' _ [] = []
+f' k as = [ x : xs | (x:as') <- tails as, xs <- f' (k-1) as' ]
 
 timeSpent :: String -> Calendar -> Int
 timeSpent f (Calendar p e) = undefined --  [ev | ev@(VEvent _ _ start end _ sum _) <- e, f == sum]
