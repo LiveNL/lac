@@ -52,7 +52,7 @@ isLeapYear :: Year -> Bool
 isLeapYear (Year y) = (mod y 4 == 0 && mod y 100 /= 0) || (mod y 400 == 0)
 
 getDay :: Year -> Month -> Int
-getDay (Year y) (Month m) 
+getDay (Year y) (Month m)
     | m == 2 && isLeapYear (Year y) = 29
     | m == 2 = 28
     | m == 1 || m == 3 || m == 5 || m == 7 || m == 8 || m == 10 || m == 12 = 31
@@ -243,19 +243,14 @@ readCalendar p = do f <- openFile p ReadMode
                     d <- hGetContents f
                     return (recognizeCalendar d)
 
-readCalendar' :: FilePath -> IO String
-readCalendar' p = do f <- openFile p ReadMode
-                     d <- hGetContents f
-                     return d
-
 -- Exercise 3
 -- DO NOT use a derived Show instance. Your printing style needs to be nicer than that :)
 printCalendar :: Calendar -> String
 printCalendar (Calendar p e) =
   "BEGIN:VCALENDAR\r\n"     ++
   "PRODID:" ++ p ++ "\r\n"  ++
-  "VERSION:2.0" ++ "\r\n"  ++
-   concatMap printEvent e ++
+  "VERSION:2.0" ++ "\r\n"   ++
+  concatMap printEvent e    ++
   "END:VCALENDAR\r\n"
 
 printEvent :: VEvent -> String
