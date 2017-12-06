@@ -288,7 +288,41 @@ uniqueComb _ [] = []
 uniqueComb k as = [x:xs | (x:as') <- tails as, xs <- uniqueComb (k-1) as']
 
 timeSpent :: String -> Calendar -> Int
-timeSpent f (Calendar p e) = undefined --  [ev | ev@(VEvent _ _ start end _ sum _) <- e, f == sum]
+timeSpent f (Calendar p e) = sum [time' end start | ev@(VEvent _ _ start end _ sum' _) <- e, (Just f) == sum']
+  where time' (DateTime (Date (Year y1) (Month mon1) (Day d1)) (Time (Hour h1) (Minute min1) (Second s1)) _) (DateTime (Date (Year y2) (Month mon2) (Day d2)) (Time (Hour h2) (Minute min2) (Second s2)) _) = dateToMinutes (subtractDates ((timeToDays h1 min1 s1) + (dateToDays y1 mon1 d1)) ((timeToDays h2 min2 s2) + (dateToDays y2 mon2 d2)))
+
+-- Calculate no. days from date and time for two datetimes, subtract and convert to minues.
+
+dateToDays :: Int -> Int -> Int -> Double
+dateToDays y m d = toEnum (floor (365 * y' + y' / 4 - y' / 100 + y' / 400 + d' + (153 * m' + 8) / 5))::Double
+  where y' | m <= 2    = toEnum (y - 1)::Double
+           | otherwise = toEnum y::Double
+        m' | m <= 2    = toEnum (m + 12)::Double
+           | otherwise = toEnum m::Double
+        d' = toEnum d::Double
+
+timeToDays :: Int -> Int -> Int -> Double
+timeToDays h m s = (h' / 24) + (m' / 60 / 24) + (s' / 60 / 60 / 24)
+  where h' = toEnum h::Double
+        m' = toEnum m::Double
+        s' = toEnum s::Double
+
+subtractDates :: Double -> Double -> (Double, Double, Double, Double)
+subtractDates date1 date2 = (days, hours, minutes, seconds)
+  where sum  = date1 - date2
+        days = floor' sum
+        hours = floor' ((sum - days) * 24)
+        minutes = floor' ((((sum - days) * 24) - hours) * 60)
+        seconds = round' ((((((sum - days) * 24) - hours) * 60) - minutes) * 60)
+
+floor' :: Double -> Double
+floor' d = toEnum (floor d)::Double
+
+round' :: Double -> Double
+round' d = toEnum (round d)::Double
+
+dateToMinutes :: (Double, Double, Double, Double) -> Int
+dateToMinutes (d, h, m, s) = fromEnum ((d * 24 * 60) + (h * 60) + m + (s / 60))::Int
 
 -- Exercise 5
 ppMonth :: Year -> Month -> Calendar -> String
