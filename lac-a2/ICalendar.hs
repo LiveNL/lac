@@ -271,21 +271,21 @@ findEvents :: DateTime -> Calendar -> [VEvent]
 findEvents dt (Calendar _ e) = [ev | ev@(VEvent _ _ start end _ _ _) <- e, dt >= start && dt <= end]
 
 checkOverlapping :: Calendar -> Bool
-checkOverlapping (Calendar _ e) | length e <= 2 = check2 [e]
-                                | otherwise =  check2 (f' 2 e)
+checkOverlapping (Calendar _ e) | length e <= 2 = overlapping [e]
+                                | otherwise =  overlapping (uniqueComb 2 e)
 
-check2 :: [[VEvent]] -> Bool
-check2 []     = False
-check2 (x:xs) = if o h t then True else check2 xs
+overlapping :: [[VEvent]] -> Bool
+overlapping []     = False
+overlapping (x:xs) = o h t || overlapping xs
   where h = head x
         t = last x
         o (VEvent _ _ start1 end1 _ _ _) (VEvent _ _ start2 end2 _ _ _) | (start1 < end2 && start2 < end1) || (end1 == start2) || (start1 == end2) = True
                                                                         | otherwise = False
 
-f' :: (Eq t, Num t) => t -> [a] -> [[a]]
-f' 0 _  = [[]]
-f' _ [] = []
-f' k as = [ x : xs | (x:as') <- tails as, xs <- f' (k-1) as' ]
+uniqueComb :: (Eq t, Num t) => t -> [a] -> [[a]]
+uniqueComb 0 _  = [[]]
+uniqueComb _ [] = []
+uniqueComb k as = [x:xs | (x:as') <- tails as, xs <- uniqueComb (k-1) as']
 
 timeSpent :: String -> Calendar -> Int
 timeSpent f (Calendar p e) = undefined --  [ev | ev@(VEvent _ _ start end _ sum _) <- e, f == sum]
