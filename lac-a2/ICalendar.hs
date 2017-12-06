@@ -8,7 +8,6 @@ import Data.Maybe
 import System.IO
 import Debug.Trace
 import Data.List
-import Text.PrettyPrint.Boxes
 
 
 data DateTime = DateTime { date :: Date
@@ -269,7 +268,7 @@ countEvents :: Calendar -> Int
 countEvents (Calendar _ e) = length e
 
 findEvents :: DateTime -> Calendar -> [VEvent]
-findEvents dt (Calendar _ e) = [ev | ev@(VEvent _ _ start end _ _ _) <- e, dt >= start && dt < end]
+findEvents dt (Calendar _ e) = [ev | ev@(VEvent _ _ start end _ _ _) <- e, dt >= start && dt <= end]
 
 checkOverlapping :: Calendar -> Bool
 checkOverlapping (Calendar _ e) | length e <= 2 = check2 [e]
