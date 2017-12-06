@@ -119,7 +119,7 @@ isSpace :: Char -> Bool
 isSpace ' ' = True
 isSpace _   = False
 
-spaces :: Parser Char String 
+spaces :: Parser Char String
 spaces =  greedy (satisfy isSpace)
 
 scanCalendar :: Parser Char [Token]
