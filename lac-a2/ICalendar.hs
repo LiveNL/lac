@@ -133,8 +133,19 @@ isSpace _   = False
 spaces :: Parser Char String
 spaces =  greedy (satisfy isSpace)
 
+--scanCalendar = many (toToken <$ spaces <*> identifier <* option (symbol ':') ':' <*> ((greedy (satisfy (\x -> x /= '\r')) <* symbol '\r' <* symbol '\n')
+--
+-- <* symbol '\r' <* symbol '\n' )
+--  where f = (sequence ((satisfy (\x -> x /= '\r')) <* symbol '\r' <* symbol '\n')) <|> (sequence ((satisfy (\x -> x /= '\r')) <*> symbol '\r' <*> symbol '\n') <*> symbol ' ' <*> greedy f))
+--
 scanCalendar :: Parser Char [Token]
-scanCalendar = many (toToken <$ spaces <*> identifier <* option (symbol ':') ':' <*> greedy (satisfy (\x -> x /= '\r')) <* symbol '\r' <* symbol '\n')
+scanCalendar = many (toToken <$ spaces <*> identifier <* option (symbol ':') ':' <*> (p <|> p2))
+
+p :: Parser Char [Char]
+p = ((greedy (satisfy (\x -> x /= '\r')))) <* symbol '\r' <* symbol '\n'
+
+p2 :: Parser Char [Char]
+p2 = (greedy (satisfy (\x -> x /= '\r'))) <* symbol '\r' <* symbol '\n'
 
 toToken :: String -> String -> Token
 toToken a b = case a of
