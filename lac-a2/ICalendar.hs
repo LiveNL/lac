@@ -134,13 +134,10 @@ spaces :: Parser Char String
 spaces =  greedy (satisfy isSpace)
 
 scanCalendar :: Parser Char [Token]
-scanCalendar = many (toToken <$ spaces <*> identifier <* option (symbol ':') ':' <*> (multiLine <|> singleLine))
+scanCalendar = many (toToken <$ spaces <*> identifier <* option (symbol ':') ':' <*> line)
 
-singleLine :: Parser Char [Char]
-singleLine = greedy (satisfy (\x -> x /= '\r')) <* token "\r\n"
-
-multiLine :: Parser Char [Char]
-multiLine = combineLine <$> many (greedy (satisfy (\x -> x /= '\r')) <* token "\r\n ") <*> greedy (satisfy (\x -> x /= '\r')) <* token "\r\n"
+line :: Parser Char [Char]
+line = combineLine <$> many (greedy (satisfy (\x -> x /= '\r')) <* token "\r\n ") <*> greedy (satisfy (\x -> x /= '\r')) <* token "\r\n"
 
 combineLine :: [String] -> String -> String
 combineLine a b = concat a ++ b
