@@ -140,7 +140,7 @@ singleLine :: Parser Char [Char]
 singleLine = greedy (satisfy (\x -> x /= '\r')) <* token "\r\n"
 
 multiLine :: Parser Char [Char]
-multiLine = combineLine <$> many (greedy1 (satisfy (\x -> x /= '\r')) <* token "\r\n ") <*> greedy (satisfy (\x -> x /= '\r')) <* token "\r\n"
+multiLine = combineLine <$> many (greedy (satisfy (\x -> x /= '\r')) <* token "\r\n ") <*> greedy (satisfy (\x -> x /= '\r')) <* token "\r\n"
 
 combineLine :: [String] -> String -> String
 combineLine a b = concat a ++ b
