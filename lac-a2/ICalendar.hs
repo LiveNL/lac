@@ -14,30 +14,30 @@ import Text.PrettyPrint.Boxes
 data DateTime = DateTime { date :: Date
                          , time :: Time
                          , utc :: Bool }
-    deriving (Eq, Ord)
+    deriving (Eq, Ord, Show)
 
 data Date = Date { year  :: Year
                  , month :: Month
                  , day   :: Day }
-    deriving (Eq, Ord)
+    deriving (Eq, Ord, Show)
 
-newtype Year  = Year { unYear :: Int }  deriving (Eq, Ord)
-newtype Month = Month { unMonth :: Int } deriving (Eq, Ord)
-newtype Day   = Day { unDay :: Int } deriving (Eq, Ord)
+newtype Year  = Year { unYear :: Int }  deriving (Eq, Ord, Show)
+newtype Month = Month { unMonth :: Int } deriving (Eq, Ord, Show)
+newtype Day   = Day { unDay :: Int } deriving (Eq, Ord, Show)
 
 data Time = Time { hour   :: Hour
                  , minute :: Minute
                  , second :: Second }
-    deriving (Eq, Ord)
+    deriving (Eq, Ord, Show)
 
-newtype Hour   = Hour { unHour :: Int } deriving (Eq, Ord)
-newtype Minute = Minute { unMinute :: Int } deriving (Eq, Ord)
-newtype Second = Second { unSecond :: Int } deriving (Eq, Ord)
+newtype Hour   = Hour { unHour :: Int } deriving (Eq, Ord, Show)
+newtype Minute = Minute { unMinute :: Int } deriving (Eq, Ord, Show)
+newtype Second = Second { unSecond :: Int } deriving (Eq, Ord, Show)
 
 
 data Calendar = Calendar { prodId :: String
                          , events :: [VEvent] }
-    deriving Eq
+    deriving (Eq, Show)
 
 data VEvent = VEvent { dtStamp     :: DateTime
                      , uid         :: String
@@ -46,7 +46,7 @@ data VEvent = VEvent { dtStamp     :: DateTime
                      , description :: Maybe String
                      , summary     :: Maybe String
                      , location    :: Maybe String }
-    deriving Eq
+    deriving (Eq, Show)
 
 isLeapYear :: Year -> Bool
 isLeapYear (Year y) = (mod y 4 == 0 && mod y 100 /= 0) || (mod y 400 == 0)
@@ -154,7 +154,25 @@ toToken a b = case a of
 -- testCalendar fst (head (parse scanCalendar "BEGIN:VCALENDAR\r\nPRODID:-//hacksw/handcal//NONSGML v1.0//EN\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nSUMMARY:Bastille Day Party\r\nUID:19970610T172345Z-AF23B2@example.com\r\nDTSTAMP:19970610T172345Z\r\nDTSTART:19970714T170000Z\r\nDTEND:19970715T040000Z\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"))
 
 parseCalendar :: Parser Token Calendar
-parseCalendar = Calendar <$ (satisfy isBegin) <*> parseProdID <* option parseRest "" <* (satisfy isBegin) <*> many toEvent <* (satisfy isEnd)
+parseCalendar = Calendar <$ parseBegin <*> ((parseVersion *> parseProdID) <|> (parseProdID <* parseVersion)) <*> (pack parseBegin (many toEvent) parseEnd) <* (satisfy isEnd)
+--parseCalendar = Calendar <$ (satisfy isBegin) <*> parseProdID <* parseVersion <* (satisfy isBegin) <*> many toEvent <* (satisfy isEnd)
+-- parseCalendar = Calendar <$ parseBegin <*> choice t <* choice t <*> many toEvent <* (satisfy isEnd)
+
+t = [parseProdID, parseVersion]
+
+parseVersion :: Parser Token String
+parseVersion = toString <$> satisfy isVersion
+
+parseBegin :: Parser Token String
+parseBegin = toString <$> satisfy isBegin
+
+parseEnd :: Parser Token String
+parseEnd = toString <$> satisfy isEnd
+
+
+isVersion :: Token -> Bool
+isVersion (TVersion _) = True
+isVersion _            = False
 
 parseProdID :: Parser Token String
 parseProdID = toString <$> satisfy isProdId
@@ -163,24 +181,61 @@ isProdId :: Token -> Bool
 isProdId (TProdid _) = True
 isProdId _           = False
 
-toEvent :: Parser Token VEvent
-toEvent = VEvent <$ (satisfy isBegin) <*> parseDT <*> parseUID <* option parseRest "" <*> parseDT <*> parseDT <*> optional parseDesc <* option parseRest "" <*> optional parseSummary <* option parseRest "" <*> optional parseLocation <* option parseRest "" <* (satisfy isEnd)
 
-parseUID :: Parser Token String
-parseUID = toString <$> satisfy isUID
+-- EVENT PARSING
+
+toEvent :: Parser Token VEvent
+toEvent = f <$> toEvent'
+  where f ((DateTimeProp x _):(StringProp y _):(DateTimeProp z _):(DateTimeProp a _):(MaybeStringProp b _):(MaybeStringProp c _):(MaybeStringProp d _):[]) = trace (show "ASDF") $ VEvent x y z a b c d
+
+toEvent' :: Parser Token [EventProp]
+toEvent' = some parseProp
+-- toEvent' = do f <- sort (many parseProp) -- Sort by Key
+--              return (check f)
+
+check :: [EventProp] -> Parser Token [EventProp]
+check xs = succeed xs
+-- check xs = if xs == Keys
+  --         then xs
+   --        else failp
+
+ -- parseDTE <*> parseUID <* option parseRest "" <*> parseDT <*> parseDT <*> optional parseDesc <* option parseRest "" <*> optional parseSummary <* option parseRest "" <*> optional parseLocation <* option parseRest "" <* (satisfy isEnd)
+
+data Key = DTStamp | UID | DTStart | DTEnd | Description | Summary | Location
+
+data EventProp = DateTimeProp    DateTime       Key
+               | StringProp      String         Key
+               | MaybeStringProp (Maybe String) Key
+
+isEEnd :: Token -> Bool
+isEEnd (TDTEnd _) = True
+isEEnd (_) = False
+
+parseProp :: Parser Token EventProp
+parseProp = choice [parseUID, parseDesc, parseSummary, parseLocation, parseRest, parseDTE]
+
+parseUID :: Parser Token EventProp
+parseUID = toStringE <$> satisfy isUID
+
+toStringE :: Token -> EventProp
+toStringE (TUID x)         = StringProp x UID
+toStringE (TSummary x)     = MaybeStringProp (Just x) Summary
+toStringE (TDescription x) = MaybeStringProp (Just x) Description
+toStringE (TLocation x)    = MaybeStringProp (Just x) Location
+-- toStringE Rest             = StringProp ""
 
 isUID :: Token -> Bool
 isUID (TUID _) = True
 isUID _        = False
 
-parseDT :: Parser Token DateTime
-parseDT = toDT <$> satisfy isDt
+parseDTE :: Parser Token EventProp
+parseDTE = toDTE <$> satisfy isDt
 
-toDT :: Token -> DateTime
-toDT (TDTStamp x) = fst (head (parse parseDateTime x))
-toDT (TDTStart x) = fst (head (parse parseDateTime x))
-toDT (TDTEnd x)   = fst (head (parse parseDateTime x))
-toDT _            = error "TimeStamp"
+toDTE :: Token -> EventProp
+toDTE (TDTStamp x) = DateTimeProp (fst (head (parse parseDateTime x))) DTStamp
+toDTE (TDTStart x) = DateTimeProp (fst (head (parse parseDateTime x))) DTStart
+toDTE (TDTEnd x)   = DateTimeProp (fst (head (parse parseDateTime x))) DTEnd
+toDTE _            = error "TimeStamp"
 
 isDt :: Token -> Bool
 isDt (TDTStamp _) = True
@@ -190,7 +245,6 @@ isDt _            = False
 
 isBegin :: Token -> Bool
 isBegin (TBegin _)   = True
-isBegin (TVersion _) = True
 isBegin _            = False
 
 isEvent :: Token -> Bool
@@ -201,40 +255,36 @@ isEnd :: Token -> Bool
 isEnd (TEnd _) = True
 isEnd _        = False
 
-parseDesc :: Parser Token String
-parseDesc = toString <$> satisfy isDesc
+parseDesc :: Parser Token EventProp
+parseDesc = toStringE <$> satisfy isDesc
 
 isDesc :: Token -> Bool
 isDesc (TDescription _) = True
 isDesc _                = False
 
-parseSummary :: Parser Token String
-parseSummary = toString <$> satisfy isSummary
+parseSummary :: Parser Token EventProp
+parseSummary = toStringE <$> satisfy isSummary
 
 isSummary :: Token -> Bool
 isSummary (TSummary _) = True
 isSummary _            = False
 
-parseLocation :: Parser Token String
-parseLocation = toString <$> satisfy isLocation
+parseLocation :: Parser Token EventProp
+parseLocation = toStringE <$> satisfy isLocation
 
 isLocation :: Token -> Bool
 isLocation (TLocation _) = True
 isLocation _             = False
 
-parseRest :: Parser Token String
-parseRest = toString <$> satisfy isRest
+parseRest :: Parser Token EventProp
+parseRest = toStringE <$> satisfy isRest
 
 isRest :: Token -> Bool
 isRest Rest = True
 isRest _    = False
 
 toString :: Token -> String
-toString (TSummary x)     = x
-toString (TDescription x) = x
-toString (TLocation x)    = x
 toString (TProdid x)      = x
-toString (TUID x)         = x
 toString Rest             = ""
 
 -- Exercise 2
