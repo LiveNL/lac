@@ -133,19 +133,17 @@ isSpace _   = False
 spaces :: Parser Char String
 spaces =  greedy (satisfy isSpace)
 
---scanCalendar = many (toToken <$ spaces <*> identifier <* option (symbol ':') ':' <*> ((greedy (satisfy (\x -> x /= '\r')) <* symbol '\r' <* symbol '\n')
---
--- <* symbol '\r' <* symbol '\n' )
---  where f = (sequence ((satisfy (\x -> x /= '\r')) <* symbol '\r' <* symbol '\n')) <|> (sequence ((satisfy (\x -> x /= '\r')) <*> symbol '\r' <*> symbol '\n') <*> symbol ' ' <*> greedy f))
---
 scanCalendar :: Parser Char [Token]
-scanCalendar = many (toToken <$ spaces <*> identifier <* option (symbol ':') ':' <*> p2 ) -- (p <|> p2))
+scanCalendar = many (toToken <$ spaces <*> identifier <* option (symbol ':') ':' <*> (multiLine <|> singleLine))
 
--- p :: Parser Char [Char]
--- p = (((greedy (satisfy (\x -> x /= '\r')))) <*> (token ['\r', '\n', ' '] <<|> token ['\r', '\n']))
+singleLine :: Parser Char [Char]
+singleLine = greedy (satisfy (\x -> x /= '\r')) <* token "\r\n"
 
-p2 :: Parser Char [Char]
-p2 = ((greedy (satisfy (\x -> x /= '\r')))) <* symbol '\r' <* symbol '\n'
+multiLine :: Parser Char [Char]
+multiLine = combineLine <$> many (greedy1 (satisfy (\x -> x /= '\r')) <* token "\r\n ") <*> greedy (satisfy (\x -> x /= '\r')) <* token "\r\n"
+
+combineLine :: [String] -> String -> String
+combineLine a b = concat a ++ b
 
 toToken :: String -> String -> Token
 toToken a b = case a of
@@ -162,12 +160,8 @@ toToken a b = case a of
   "END"         -> TEnd         b
   _             -> Rest
 
--- testCalendar fst (head (parse scanCalendar "BEGIN:VCALENDAR\r\nPRODID:-//hacksw/handcal//NONSGML v1.0//EN\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nSUMMARY:Bastille Day Party\r\nUID:19970610T172345Z-AF23B2@example.com\r\nDTSTAMP:19970610T172345Z\r\nDTSTART:19970714T170000Z\r\nDTEND:19970715T040000Z\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"))
-
 parseCalendar :: Parser Token Calendar
 parseCalendar = Calendar <$ parseBegin <*> ((parseVersion *> parseProdID) <|> (parseProdID <* parseVersion)) <*> many (pack parseBegin toEvent parseEnd) <* (satisfy isEnd)
---parseCalendar = Calendar <$ (satisfy isBegin) <*> parseProdID <* parseVersion <* (satisfy isBegin) <*> many toEvent <* (satisfy isEnd)
--- parseCalendar = Calendar <$ parseBegin <*> choice t <* choice t <*> many toEvent <* (satisfy isEnd)
 
 parseVersion :: Parser Token String
 parseVersion = toString <$> satisfy isVersion
@@ -210,12 +204,6 @@ keysort a b | (f a) < (g b) = LT
                     g (DateTimeProp _ k) = k
                     g (StringProp _ k) = k
                     g (MaybeStringProp _ k) = k
-
---toEvent' = do f <- (some parseProp)
---
- --             return (sort f)
--- toEvent' = do f <- sort (many parseProp) -- Sort by Key
---              return (check f)
 
 check :: [EventProp] -> Parser Token [EventProp]
 check xs | notElem Description ts = check ((xs ++ [(MaybeStringProp Nothing Description)]))
@@ -413,8 +401,6 @@ dateToMinutes :: (Double, Double, Double, Double) -> Int
 dateToMinutes (d, h, m, s) = fromEnum ((d * 24 * 60) + (h * 60) + m + (s / 60))::Int
 
 -- Exercise 5
-cal = (Calendar {prodId = "/", events = [VEvent {dtStamp = DateTime {date = Date {year = Year {unYear = 2012}, month = Month {unMonth = 11}, day = Day {unDay = 6}}, time = Time {hour = Hour {unHour = 9}, minute = Minute {unMinute = 18}, second = Second {unSecond = 52}}, utc = True}, uid = "20121106T091853Z@mysite.com", dtStart = DateTime {date = Date {year = Year {unYear = 2012}, month = Month {unMonth = 11}, day = Day {unDay = 12}}, time = Time {hour = Hour {unHour = 12}, minute = Minute {unMinute = 15}, second = Second {unSecond = 0}}, utc = True}, dtEnd = DateTime {date = Date {year = Year {unYear = 2012}, month = Month {unMonth = 11}, day = Day {unDay = 12}}, time = Time {hour = Hour {unHour = 14}, minute = Minute {unMinute = 0}, second = Second {unSecond = 0}}, utc = True}, description = Nothing, summary = Just "HOORCOL INFOB3TC group: 1", location = Nothing},VEvent {dtStamp = DateTime {date = Date {year = Year {unYear = 2012}, month = Month {unMonth = 11}, day = Day {unDay = 6}}, time = Time {hour = Hour {unHour = 9}, minute = Minute {unMinute = 18}, second = Second {unSecond = 52}}, utc = True}, uid = "20121106T091853Z@mysite.com", dtStart = DateTime {date = Date {year = Year {unYear = 2012}, month = Month {unMonth = 11}, day = Day {unDay = 12}}, time = Time {hour = Hour {unHour = 14}, minute = Minute {unMinute = 15}, second = Second {unSecond = 0}}, utc = True}, dtEnd = DateTime {date = Date {year = Year {unYear = 2012}, month = Month {unMonth = 11}, day = Day {unDay = 12}}, time = Time {hour = Hour {unHour = 16}, minute = Minute {unMinute = 0}, second = Second {unSecond = 0}}, utc = True}, description = Nothing, summary = Just "HOORCOL INFOB3TC group: 1", location = Nothing},VEvent {dtStamp = DateTime {date = Date {year = Year {unYear = 2012}, month = Month {unMonth = 11}, day = Day {unDay = 6}}, time = Time {hour = Hour {unHour = 9}, minute = Minute {unMinute = 18}, second = Second {unSecond = 52}}, utc = True}, uid = "20121106T091853Z@mysite.com", dtStart = DateTime {date = Date {year = Year {unYear = 2012}, month = Month {unMonth = 11}, day = Day {unDay = 15}}, time = Time {hour = Hour {unHour = 8}, minute = Minute {unMinute = 0}, second = Second {unSecond = 0}}, utc = True}, dtEnd = DateTime {date = Date {year = Year {unYear = 2012}, month = Month {unMonth = 11}, day = Day {unDay = 15}}, time = Time {hour = Hour {unHour = 9}, minute = Minute {unMinute = 45}, second = Second {unSecond = 0}}, utc = True}, description = Nothing, summary = Just "HOORCOL INFOB3TC group: 1", location = Nothing}]})
-
 ppMonth :: Year -> Month -> Calendar -> String
 ppMonth (Year y) (Month m) (Calendar _ e) = render (view' [week1, sep, week2, sep, week3, sep, week4, sep, week5])
   where days  = getDay (Year y) (Month m)
