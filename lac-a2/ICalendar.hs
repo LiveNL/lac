@@ -15,30 +15,30 @@ import Text.PrettyPrint.Boxes
 data DateTime = DateTime { date :: Date
                          , time :: Time
                          , utc :: Bool }
-    deriving (Eq, Ord, Show)
+    deriving (Eq, Ord)
 
 data Date = Date { year  :: Year
                  , month :: Month
                  , day   :: Day }
-    deriving (Eq, Ord, Show)
+    deriving (Eq, Ord)
 
-newtype Year  = Year { unYear :: Int }  deriving (Eq, Ord, Show)
-newtype Month = Month { unMonth :: Int } deriving (Eq, Ord, Show)
-newtype Day   = Day { unDay :: Int } deriving (Eq, Ord, Show)
+newtype Year  = Year { unYear :: Int }  deriving (Eq, Ord)
+newtype Month = Month { unMonth :: Int } deriving (Eq, Ord)
+newtype Day   = Day { unDay :: Int } deriving (Eq, Ord)
 
 data Time = Time { hour   :: Hour
                  , minute :: Minute
                  , second :: Second }
-    deriving (Eq, Ord, Show)
+    deriving (Eq, Ord)
 
-newtype Hour   = Hour { unHour :: Int } deriving (Eq, Ord, Show)
-newtype Minute = Minute { unMinute :: Int } deriving (Eq, Ord, Show)
-newtype Second = Second { unSecond :: Int } deriving (Eq, Ord, Show)
+newtype Hour   = Hour { unHour :: Int } deriving (Eq, Ord)
+newtype Minute = Minute { unMinute :: Int } deriving (Eq, Ord)
+newtype Second = Second { unSecond :: Int } deriving (Eq, Ord)
 
 
 data Calendar = Calendar { prodId :: String
                          , events :: [VEvent] }
-    deriving (Eq, Show)
+    deriving Eq
 
 data VEvent = VEvent { dtStamp     :: DateTime
                      , uid         :: String
@@ -47,7 +47,7 @@ data VEvent = VEvent { dtStamp     :: DateTime
                      , description :: Maybe String
                      , summary     :: Maybe String
                      , location    :: Maybe String }
-    deriving (Eq, Show)
+    deriving Eq
 
 isLeapYear :: Year -> Bool
 isLeapYear (Year y) = (mod y 4 == 0 && mod y 100 /= 0) || (mod y 400 == 0)
@@ -125,7 +125,7 @@ data Token = TProdid      String
            | TDTEnd       String
            | TEnd         String
            | Rest
-    deriving (Eq, Ord, Show)
+    deriving (Eq, Ord)
 
 isSpace :: Char -> Bool
 isSpace ' ' = True
@@ -137,8 +137,8 @@ spaces =  greedy (satisfy isSpace)
 scanCalendar :: Parser Char [Token]
 scanCalendar = many (toToken <$ spaces <*> identifier <* option (symbol ':') ':' <*> line)
 
-line :: Parser Char [Char]
-line = combineLine <$> many (greedy (satisfy (\x -> x /= '\r')) <* token "\r\n ") <*> greedy (satisfy (\x -> x /= '\r')) <* token "\r\n"
+line :: Parser Char String
+line = combineLine <$> many (greedy (satisfy (/= '\r')) <* token "\r\n ") <*> greedy (satisfy (/= '\r')) <* token "\r\n"
 
 combineLine :: [String] -> String -> String
 combineLine a b = concat a ++ b
@@ -159,7 +159,7 @@ toToken a b = case a of
   _             -> Rest
 
 parseCalendar :: Parser Token Calendar
-parseCalendar = Calendar <$ parseBegin <*> ((parseVersion *> parseProdID) <|> (parseProdID <* parseVersion)) <*> many (pack parseBegin toEvent parseEnd) <* (satisfy isEnd)
+parseCalendar = Calendar <$ parseBegin <*> ((parseVersion *> parseProdID) <|> (parseProdID <* parseVersion)) <*> many (pack parseBegin toEvent parseEnd) <* satisfy isEnd
 
 parseVersion :: Parser Token String
 parseVersion = toString <$> satisfy isVersion
@@ -185,45 +185,41 @@ isProdId _           = False
 
 toEvent :: Parser Token VEvent
 toEvent = f <$> toEvent'
-  where f ((DateTimeProp x _):(StringProp y _):(DateTimeProp z _):(DateTimeProp a _):(MaybeStringProp b _):(MaybeStringProp c _):[(MaybeStringProp d _)]) = VEvent x y z a b c d
+  where f (DateTimeProp x _:StringProp y _:DateTimeProp z _:DateTimeProp a _:MaybeStringProp b _:MaybeStringProp c _:[MaybeStringProp d _]) = VEvent x y z a b c d
 
 toEvent' :: Parser Token [EventProp]
 toEvent' = do f <- some parseProp
               x <- check f
               return (sortBy keysort x)
 
-keysort a b | (f a) < (g b) = LT
-            | (f a) == (g b) = EQ
-            | otherwise = GT
-              where f (DateTimeProp _ k) = k
-                    f (StringProp _ k) = k
+keysort a b | f a < g b  = LT
+            | f a == g b = EQ
+            | otherwise  = GT
+              where f (DateTimeProp _ k)    = k
+                    f (StringProp _ k)      = k
                     f (MaybeStringProp _ k) = k
-                    g (DateTimeProp _ k) = k
-                    g (StringProp _ k) = k
+                    g (DateTimeProp _ k)    = k
+                    g (StringProp _ k)      = k
                     g (MaybeStringProp _ k) = k
 
 check :: [EventProp] -> Parser Token [EventProp]
-check xs | notElem Description ts = check ((xs ++ [(MaybeStringProp Nothing Description)]))
-         | notElem Location ts   =     check ((xs ++ [(MaybeStringProp Nothing Location)]))
-         | notElem Summary ts =     check ((xs ++ [(MaybeStringProp Nothing Summary)]))
-         | elem RestKey ts = check (take (fromJust (elemIndex RestKey ts)) xs ++ drop (1 + (fromJust (elemIndex RestKey ts))) xs)
-         | otherwise = succeed xs
+check xs | Description `notElem` ts = check (xs ++ [(MaybeStringProp Nothing Description)])
+         | Location `notElem ` ts   = check (xs ++ [(MaybeStringProp Nothing Location)])
+         | Summary `notElem ` ts    = check (xs ++ [(MaybeStringProp Nothing Summary)])
+         | RestKey `elem` ts        = check (take (fromJust (elemIndex RestKey ts)) xs ++ drop (1 + fromJust (elemIndex RestKey ts)) xs)
+         | otherwise                = succeed xs
                where ts = map f xs
                      f (DateTimeProp y z) = z
                      f (StringProp y z) = z
                      f (MaybeStringProp y z) = z
 
 data Key = DTStamp | UID | DTStart | DTEnd | Description | Summary | Location | RestKey
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord)
 
 data EventProp = DateTimeProp    DateTime       Key
                | StringProp      String         Key
                | MaybeStringProp (Maybe String) Key
-               deriving (Eq, Ord, Show)
-
-isEEnd :: Token -> Bool
-isEEnd (TDTEnd _) = True
-isEEnd (_) = False
+               deriving (Eq, Ord)
 
 parseProp :: Parser Token EventProp
 parseProp = choice [parseUID, parseDesc, parseSummary, parseLocation, parseRest, parseDTE, parseRest]
@@ -236,8 +232,7 @@ toStringE (TUID x)         = StringProp x UID
 toStringE (TSummary x)     = MaybeStringProp (Just x) Summary
 toStringE (TDescription x) = MaybeStringProp (Just x) Description
 toStringE (TLocation x)    = MaybeStringProp (Just x) Location
-toStringE (Rest)         = StringProp "" RestKey
--- toStringE Rest             = StringProp ""
+toStringE Rest             = StringProp "" RestKey
 
 isUID :: Token -> Bool
 isUID (TUID _) = True
