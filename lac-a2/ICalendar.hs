@@ -2,7 +2,7 @@ module ICalendar where
 
 -- Kevin Wilbrink & Jordi Wippert
 --
-import Prelude hiding ((<*), (<$))
+import Prelude hiding ((<*), (*>), (<$), ($>), sequence)
 import ParseLib.Abstract
 import Data.Maybe
 import System.IO
@@ -154,11 +154,9 @@ toToken a b = case a of
 -- testCalendar fst (head (parse scanCalendar "BEGIN:VCALENDAR\r\nPRODID:-//hacksw/handcal//NONSGML v1.0//EN\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nSUMMARY:Bastille Day Party\r\nUID:19970610T172345Z-AF23B2@example.com\r\nDTSTAMP:19970610T172345Z\r\nDTSTART:19970714T170000Z\r\nDTEND:19970715T040000Z\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"))
 
 parseCalendar :: Parser Token Calendar
-parseCalendar = Calendar <$ parseBegin <*> ((parseVersion *> parseProdID) <|> (parseProdID <* parseVersion)) <*> (pack parseBegin (many toEvent) parseEnd) <* (satisfy isEnd)
+parseCalendar = Calendar <$ parseBegin <*> ((parseVersion *> parseProdID) <|> (parseProdID <* parseVersion)) <*> many (pack parseBegin toEvent parseEnd) <* (satisfy isEnd)
 --parseCalendar = Calendar <$ (satisfy isBegin) <*> parseProdID <* parseVersion <* (satisfy isBegin) <*> many toEvent <* (satisfy isEnd)
 -- parseCalendar = Calendar <$ parseBegin <*> choice t <* choice t <*> many toEvent <* (satisfy isEnd)
-
-t = [parseProdID, parseVersion]
 
 parseVersion :: Parser Token String
 parseVersion = toString <$> satisfy isVersion
@@ -185,11 +183,12 @@ isProdId _           = False
 
 toEvent :: Parser Token VEvent
 toEvent = f <$> toEvent'
-  where f ((DateTimeProp x _):(StringProp y _):(DateTimeProp z _):(DateTimeProp a _):[(MaybeStringProp b _),(MaybeStringProp c _),(MaybeStringProp d _)]) = VEvent x y z a b c d
+  where f ((DateTimeProp x _):(StringProp y _):(DateTimeProp z _):(DateTimeProp a _):(MaybeStringProp b _):(MaybeStringProp c _):[(MaybeStringProp d _)]) = VEvent x y z a b c d
 
 toEvent' :: Parser Token [EventProp]
 toEvent' = do f <- some parseProp
-              return (trace (show (sort f)) $ sortBy keysort f)
+              x <- check f
+              return (sortBy keysort x)
 
 keysort a b | (f a) < (g b) = LT
             | (f a) == (g b) = EQ
@@ -208,14 +207,19 @@ keysort a b | (f a) < (g b) = LT
 --              return (check f)
 
 check :: [EventProp] -> Parser Token [EventProp]
-check xs = succeed xs
--- check xs = if xs == Keys
-  --         then xs
-   --        else failp
+check xs | notElem Description ts = check ((xs ++ [(MaybeStringProp Nothing Description)]))
+         | notElem Location ts   =     check ((xs ++ [(MaybeStringProp Nothing Location)]))
+         | notElem Summary ts =     check ((xs ++ [(MaybeStringProp Nothing Summary)]))
+         | elem RestKey ts = check (take (fromJust (elemIndex RestKey ts)) xs ++ drop (1 + (fromJust (elemIndex RestKey ts))) xs)
+         | otherwise = succeed xs
+               where ts = map f xs
+                     f (DateTimeProp y z) = z
+                     f (StringProp y z) = z
+                     f (MaybeStringProp y z) = z
 
  -- parseDTE <*> parseUID <* option parseRest "" <*> parseDT <*> parseDT <*> optional parseDesc <* option parseRest "" <*> optional parseSummary <* option parseRest "" <*> optional parseLocation <* option parseRest "" <* (satisfy isEnd)
 
-data Key = DTStamp | UID | DTStart | DTEnd | Description | Summary | Location
+data Key = DTStamp | UID | DTStart | DTEnd | Description | Summary | Location | RestKey
   deriving (Eq, Ord, Show)
 
 data EventProp = DateTimeProp    DateTime       Key
@@ -228,7 +232,7 @@ isEEnd (TDTEnd _) = True
 isEEnd (_) = False
 
 parseProp :: Parser Token EventProp
-parseProp = choice [parseUID, parseDesc, parseSummary, parseLocation, parseRest, parseDTE]
+parseProp = choice [parseUID, parseDesc, parseSummary, parseLocation, parseRest, parseDTE, parseRest]
 
 parseUID :: Parser Token EventProp
 parseUID = toStringE <$> satisfy isUID
@@ -238,6 +242,7 @@ toStringE (TUID x)         = StringProp x UID
 toStringE (TSummary x)     = MaybeStringProp (Just x) Summary
 toStringE (TDescription x) = MaybeStringProp (Just x) Description
 toStringE (TLocation x)    = MaybeStringProp (Just x) Location
+toStringE (Rest)         = StringProp "" RestKey
 -- toStringE Rest             = StringProp ""
 
 isUID :: Token -> Bool
