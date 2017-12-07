@@ -169,7 +169,6 @@ parseBegin = toString <$> satisfy isBegin
 parseEnd :: Parser Token String
 parseEnd = toString <$> satisfy isEnd
 
-
 isVersion :: Token -> Bool
 isVersion (TVersion _) = True
 isVersion _            = False
@@ -186,10 +185,25 @@ isProdId _           = False
 
 toEvent :: Parser Token VEvent
 toEvent = f <$> toEvent'
-  where f ((DateTimeProp x _):(StringProp y _):(DateTimeProp z _):(DateTimeProp a _):(MaybeStringProp b _):(MaybeStringProp c _):(MaybeStringProp d _):[]) = trace (show "ASDF") $ VEvent x y z a b c d
+  where f ((DateTimeProp x _):(StringProp y _):(DateTimeProp z _):(DateTimeProp a _):[(MaybeStringProp b _),(MaybeStringProp c _),(MaybeStringProp d _)]) = VEvent x y z a b c d
 
 toEvent' :: Parser Token [EventProp]
-toEvent' = some parseProp
+toEvent' = do f <- some parseProp
+              return (trace (show (sort f)) $ sortBy keysort f)
+
+keysort a b | (f a) < (g b) = LT
+            | (f a) == (g b) = EQ
+            | otherwise = GT
+              where f (DateTimeProp _ k) = k
+                    f (StringProp _ k) = k
+                    f (MaybeStringProp _ k) = k
+                    g (DateTimeProp _ k) = k
+                    g (StringProp _ k) = k
+                    g (MaybeStringProp _ k) = k
+
+--toEvent' = do f <- (some parseProp)
+--
+ --             return (sort f)
 -- toEvent' = do f <- sort (many parseProp) -- Sort by Key
 --              return (check f)
 
@@ -202,10 +216,12 @@ check xs = succeed xs
  -- parseDTE <*> parseUID <* option parseRest "" <*> parseDT <*> parseDT <*> optional parseDesc <* option parseRest "" <*> optional parseSummary <* option parseRest "" <*> optional parseLocation <* option parseRest "" <* (satisfy isEnd)
 
 data Key = DTStamp | UID | DTStart | DTEnd | Description | Summary | Location
+  deriving (Eq, Ord, Show)
 
 data EventProp = DateTimeProp    DateTime       Key
                | StringProp      String         Key
                | MaybeStringProp (Maybe String) Key
+               deriving (Eq, Ord, Show)
 
 isEEnd :: Token -> Bool
 isEEnd (TDTEnd _) = True
