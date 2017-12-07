@@ -2,12 +2,13 @@ module ICalendar where
 
 -- Kevin Wilbrink & Jordi Wippert
 --
-import Prelude hiding ((<*), (*>), (<$), ($>))
+import Prelude hiding ((<*), (<$))
 import ParseLib.Abstract
 import Data.Maybe
 import System.IO
 import Debug.Trace
 import Data.List
+import Text.PrettyPrint.Boxes
 
 
 data DateTime = DateTime { date :: Date
@@ -46,6 +47,16 @@ data VEvent = VEvent { dtStamp     :: DateTime
                      , summary     :: Maybe String
                      , location    :: Maybe String }
     deriving Eq
+
+isLeapYear :: Year -> Bool
+isLeapYear (Year y) = (mod y 4 == 0 && mod y 100 /= 0) || (mod y 400 == 0)
+
+getDay :: Year -> Month -> Int
+getDay (Year y) (Month m) 
+    | m == 2 && isLeapYear (Year y) = 29
+    | m == 2 = 28
+    | m == 1 || m == 3 || m == 5 || m == 7 || m == 8 || m == 10 || m == 12 = 31
+    | otherwise = 30
 
 -- DateTime parseing, copied from exercise 1
 parse2D :: Parser Char Int
@@ -195,28 +206,28 @@ parseDesc = toString <$> satisfy isDesc
 
 isDesc :: Token -> Bool
 isDesc (TDescription _) = True
-isDesc _ = False
+isDesc _                = False
 
 parseSummary :: Parser Token String
 parseSummary = toString <$> satisfy isSummary
 
 isSummary :: Token -> Bool
 isSummary (TSummary _) = True
-isSummary _ = False
+isSummary _            = False
 
 parseLocation :: Parser Token String
 parseLocation = toString <$> satisfy isLocation
 
 isLocation :: Token -> Bool
 isLocation (TLocation _) = True
-isLocation _ = False
+isLocation _             = False
 
 parseRest :: Parser Token String
 parseRest = toString <$> satisfy isRest
 
 isRest :: Token -> Bool
-isRest (Rest) = True
-isRest _ = False
+isRest Rest = True
+isRest _    = False
 
 toString :: Token -> String
 toString (TSummary x)     = x
@@ -224,7 +235,7 @@ toString (TDescription x) = x
 toString (TLocation x)    = x
 toString (TProdid x)      = x
 toString (TUID x)         = x
-toString (Rest)           = ""
+toString Rest             = ""
 
 -- Exercise 2
 readCalendar :: FilePath -> IO (Maybe Calendar)
@@ -244,7 +255,7 @@ printCalendar (Calendar p e) =
   "BEGIN:VCALENDAR\r\n"     ++
   "PRODID:" ++ p ++ "\r\n"  ++
   "VERSION:2.0" ++ "\r\n"  ++
-   concat (map printEvent e) ++
+   concatMap printEvent e ++
   "END:VCALENDAR\r\n"
 
 printEvent :: VEvent -> String
@@ -288,8 +299,8 @@ uniqueComb _ [] = []
 uniqueComb k as = [x:xs | (x:as') <- tails as, xs <- uniqueComb (k-1) as']
 
 timeSpent :: String -> Calendar -> Int
-timeSpent f (Calendar p e) = sum [time' end start | ev@(VEvent _ _ start end _ sum' _) <- e, (Just f) == sum']
-  where time' (DateTime (Date (Year y1) (Month mon1) (Day d1)) (Time (Hour h1) (Minute min1) (Second s1)) _) (DateTime (Date (Year y2) (Month mon2) (Day d2)) (Time (Hour h2) (Minute min2) (Second s2)) _) = dateToMinutes (subtractDates ((timeToDays h1 min1 s1) + (dateToDays y1 mon1 d1)) ((timeToDays h2 min2 s2) + (dateToDays y2 mon2 d2)))
+timeSpent f (Calendar p e) = sum [time' end start | ev@(VEvent _ _ start end _ sum' _) <- e, Just f == sum']
+  where time' (DateTime (Date (Year y1) (Month mon1) (Day d1)) (Time (Hour h1) (Minute min1) (Second s1)) _) (DateTime (Date (Year y2) (Month mon2) (Day d2)) (Time (Hour h2) (Minute min2) (Second s2)) _) = dateToMinutes (subtractDates (timeToDays h1 min1 s1 + dateToDays y1 mon1 d1) (timeToDays h2 min2 s2 + dateToDays y2 mon2 d2))
 
 -- Calculate no. days from date and time for two datetimes, subtract and convert to minues.
 
@@ -325,6 +336,38 @@ dateToMinutes :: (Double, Double, Double, Double) -> Int
 dateToMinutes (d, h, m, s) = fromEnum ((d * 24 * 60) + (h * 60) + m + (s / 60))::Int
 
 -- Exercise 5
-ppMonth :: Year -> Month -> Calendar -> String
-ppMonth = undefined
+cal = (Calendar {prodId = "/", events = [VEvent {dtStamp = DateTime {date = Date {year = Year {unYear = 2012}, month = Month {unMonth = 11}, day = Day {unDay = 6}}, time = Time {hour = Hour {unHour = 9}, minute = Minute {unMinute = 18}, second = Second {unSecond = 52}}, utc = True}, uid = "20121106T091853Z@mysite.com", dtStart = DateTime {date = Date {year = Year {unYear = 2012}, month = Month {unMonth = 11}, day = Day {unDay = 12}}, time = Time {hour = Hour {unHour = 12}, minute = Minute {unMinute = 15}, second = Second {unSecond = 0}}, utc = True}, dtEnd = DateTime {date = Date {year = Year {unYear = 2012}, month = Month {unMonth = 11}, day = Day {unDay = 12}}, time = Time {hour = Hour {unHour = 14}, minute = Minute {unMinute = 0}, second = Second {unSecond = 0}}, utc = True}, description = Nothing, summary = Just "HOORCOL INFOB3TC group: 1", location = Nothing},VEvent {dtStamp = DateTime {date = Date {year = Year {unYear = 2012}, month = Month {unMonth = 11}, day = Day {unDay = 6}}, time = Time {hour = Hour {unHour = 9}, minute = Minute {unMinute = 18}, second = Second {unSecond = 52}}, utc = True}, uid = "20121106T091853Z@mysite.com", dtStart = DateTime {date = Date {year = Year {unYear = 2012}, month = Month {unMonth = 11}, day = Day {unDay = 12}}, time = Time {hour = Hour {unHour = 14}, minute = Minute {unMinute = 15}, second = Second {unSecond = 0}}, utc = True}, dtEnd = DateTime {date = Date {year = Year {unYear = 2012}, month = Month {unMonth = 11}, day = Day {unDay = 12}}, time = Time {hour = Hour {unHour = 16}, minute = Minute {unMinute = 0}, second = Second {unSecond = 0}}, utc = True}, description = Nothing, summary = Just "HOORCOL INFOB3TC group: 1", location = Nothing},VEvent {dtStamp = DateTime {date = Date {year = Year {unYear = 2012}, month = Month {unMonth = 11}, day = Day {unDay = 6}}, time = Time {hour = Hour {unHour = 9}, minute = Minute {unMinute = 18}, second = Second {unSecond = 52}}, utc = True}, uid = "20121106T091853Z@mysite.com", dtStart = DateTime {date = Date {year = Year {unYear = 2012}, month = Month {unMonth = 11}, day = Day {unDay = 15}}, time = Time {hour = Hour {unHour = 8}, minute = Minute {unMinute = 0}, second = Second {unSecond = 0}}, utc = True}, dtEnd = DateTime {date = Date {year = Year {unYear = 2012}, month = Month {unMonth = 11}, day = Day {unDay = 15}}, time = Time {hour = Hour {unHour = 9}, minute = Minute {unMinute = 45}, second = Second {unSecond = 0}}, utc = True}, description = Nothing, summary = Just "HOORCOL INFOB3TC group: 1", location = Nothing}]})
 
+ppMonth :: Year -> Month -> Calendar -> String
+ppMonth (Year y) (Month m) (Calendar _ e) = render (view' [week1, sep, week2, sep, week3, sep, week4, sep, week5])
+  where days  = getDay (Year y) (Month m)
+        week1 = row' [getEvents y m x e | x <- [1..7]]
+        week2 = row' [getEvents y m x e | x <- [8..14]]
+        week3 = row' [getEvents y m x e | x <- [15..21]]
+        week4 = row' [getEvents y m x e | x <- [22..28]]
+        week5 | days > 28 = row' [getEvents y m x e | x <- [29..days]]
+              | otherwise = nullBox
+        sep  = text (concat (replicate (14 * (16 * 6)) "-"))
+
+getEvents :: Int -> Int -> Int -> [VEvent] -> Box
+getEvents y m d e = box' (show d) [displayTime (d==d1) ti1 (d==d2) ti2 | (VEvent _ _ (DateTime da1@(Date (Year y1) (Month mo1) (Day d1)) ti1 _) (DateTime da2@(Date (Year y2) (Month mo2) (Day d2)) ti2 _) _ _ _) <- e, y1 == y && mo1 == m && (d == d1 || d == d2)]
+
+displayTime :: Bool -> Time -> Bool -> Time -> String
+displayTime d1 (Time (Hour h1) (Minute m1) _) d2 (Time (Hour h2) (Minute m2) _) = overlap d1 h1 m1 ++ " - " ++ overlap d2 h2 m2
+  where n x | x == 0    = "00"
+            | x < 10    = "0" ++ show x
+            | otherwise = show x
+        overlap d h m | d         = n h ++ ":" ++ n m
+                      | otherwise = "*"
+
+box' :: String -> [String] -> Box
+box' d e = vcat left (text (d ++ concat (replicate (14 - length d) " ")) : [text x | x <- e])
+
+row' :: [Box] -> Box
+row'= hsep' left
+
+view' :: [Box] -> Box
+view' = vcat left
+
+hsep' :: Alignment -> [Box] -> Box
+hsep' a = punctuateH a (text "| ")
