@@ -424,7 +424,7 @@ ppMonth (Year y) (Month m) (Calendar _ e) = render (view' [week1, sep, week2, se
         week4 = row' [getEvents y m x e | x <- [22..28]]
         week5 | days > 28 = row' [getEvents y m x e | x <- [29..days]]
               | otherwise = nullBox
-        sep  = text (concat (replicate (14 * (16 * 6)) "-"))
+        sep  = text (concat (replicate (14 + (16 * 6)) "-"))
 
 getEvents :: Int -> Int -> Int -> [VEvent] -> Box
 getEvents y m d e = box' (show d) [displayTime (d==d1) ti1 (d==d2) ti2 | (VEvent _ _ (DateTime da1@(Date (Year y1) (Month mo1) (Day d1)) ti1 _) (DateTime da2@(Date (Year y2) (Month mo2) (Day d2)) ti2 _) _ _ _) <- e, y1 == y && mo1 == m && (d == d1 || d == d2)]
