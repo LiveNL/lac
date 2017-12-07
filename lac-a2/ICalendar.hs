@@ -1,6 +1,7 @@
 module ICalendar where
 
 -- Kevin Wilbrink & Jordi Wippert
+-- Optional/bonus assignment 6
 --
 import Prelude hiding ((<*), (*>), (<$), ($>), sequence)
 import ParseLib.Abstract
@@ -180,7 +181,6 @@ isProdId :: Token -> Bool
 isProdId (TProdid _) = True
 isProdId _           = False
 
-
 -- EVENT PARSING
 
 toEvent :: Parser Token VEvent
@@ -212,8 +212,6 @@ check xs | notElem Description ts = check ((xs ++ [(MaybeStringProp Nothing Desc
                      f (DateTimeProp y z) = z
                      f (StringProp y z) = z
                      f (MaybeStringProp y z) = z
-
- -- parseDTE <*> parseUID <* option parseRest "" <*> parseDT <*> parseDT <*> optional parseDesc <* option parseRest "" <*> optional parseSummary <* option parseRest "" <*> optional parseLocation <* option parseRest "" <* (satisfy isEnd)
 
 data Key = DTStamp | UID | DTStart | DTEnd | Description | Summary | Location | RestKey
   deriving (Eq, Ord, Show)
