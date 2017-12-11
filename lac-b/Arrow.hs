@@ -1,3 +1,5 @@
+-- Jordi Wippert & Kevin Wilbrink
+
 module Arrow where
 
 import Prelude hiding ((<*), (<$))

@@ -14,7 +14,7 @@ tokens :-
   let                   { \s -> Let }
   in                    { \s -> In }
   $digit+               { \s -> Int (read s) }
-  [\=\+\-\*\/\(\)]          { \s -> Sym (head s) }
+  [\=\+\-\*\/\(\)]      { \s -> Sym (head s) }
   $alpha [$alpha $digit \_ \']*     { \s -> Var s }
 
 {
