@@ -1,0 +1,1 @@
+Scan `scan.txt` with Alex or use this `[Let,Var "iets",Int 12,In,Sym '+']` als input for Happy.
