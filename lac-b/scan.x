@@ -1,5 +1,5 @@
 {
-module Main (main) where
+module Scan where
 }
 
 %wrapper "basic"
@@ -15,6 +15,7 @@ tokens :-
   ","         {\s -> TComma}
   "go"        {\s -> TGo}
   "take"      {\s -> TTake}
+  "mark"      {\s -> TMark}
   "nothing"   {\s -> TNothing}
   "turn"      {\s -> TTurn}
   "case"      {\s -> TCase}
@@ -28,7 +29,7 @@ tokens :-
   "Lambda"    {\s -> TLambda}
   "Debris"    {\s -> TDebris}
   "Asteroid"  {\s -> TAsteroid}
-  "Boundry"   {\s -> TBoundary}
+  "Boundary"  {\s -> TBoundary}
   "_"         {\s -> TUnderscore}
   $alpha+     {\s -> TLetter s}
   $digit+     {\s -> TDigit (read s) }
@@ -66,4 +67,5 @@ data Token = TArrow
 
 main = do s <- getContents
           print (alexScanTokens s)
+
 }
