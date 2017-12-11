@@ -52,3 +52,13 @@ data Step  =  Done  Space Pos Heading
            |  Ok    ArrowState
            |  Fail  String
 
+{- Exercise 4
+
+Happy and right-recursion is not a good combination. Happy is more efficient at parsing using left-recursive rules.
+Left-recursive results in a constant stack-space parser, wheres right-recursive rules require stack space proportional
+to the length of the list being parsed. For example, the parser in GHC used to use right-recursion to parse lists,
+and as a result it failed to parse some Happy-generated modules due to running out of stack space!
+
+ -}
+
+ 
