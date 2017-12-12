@@ -103,9 +103,8 @@ data Token = TArrow
 newtype Program = Program { rules :: [Rule] }
     deriving Show
 
-data Rule = Rule { id :: Ident,
-                   cmds :: [Cmd] }
-  deriving Show
+data Rule = Rule Ident [Cmd]
+    deriving Show
 
 type Ident = String
 
@@ -118,9 +117,8 @@ data Cmd = Go
          | Next Ident
   deriving Show
 
-data Alt = Alt { pat     :: Pat,
-                 altCmds :: [Cmd] }
-  deriving Show
+data Alt = Alt Pat [Cmd]
+    deriving Show
 
 data Pat = Lambda
          | Debris
@@ -134,4 +132,23 @@ data Dir = Right
          | Left
          | Front
   deriving Show
+
+-- main = getContents >>= print . parseProgram
+main = undefined
+
+type ProgramAlgebra x = ([x] -> x,           -- Program
+                          Ident -> [x] -> x, -- Rule
+                          Dir -> x,          -- Cmd1 (Turn Dir)
+                          Dir -> [x] -> x,   -- Cmd2 (Case Dir [Alt])
+                          Pat -> [x] -> x,   -- Alt
+                          Dir -> x          )-- Dir
+
+foldProgram :: ProgramAlgebra p -> Program -> p
+foldProgram (program, rule, cmd1, cmd2, alt, dir) = ff
+   where ff (Program xs) = program (map fr xs)
+         fr (Rule x xs)  = rule x (map fc xs)
+         fc (Turn x)     = cmd1 x
+         fc (Case x xs)  = cmd2 x (map fa xs)
+         fa (Alt x xs)   = alt x (map fc xs)
+
 }
