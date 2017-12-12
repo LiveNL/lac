@@ -441,7 +441,7 @@ data Token = TArrow
            | TMinus
   deriving (Eq, Show)
 
-newtype Program = Program { rules :: [Rule] }
+data Program = Program [Rule]
     deriving Show
 
 data Rule = Rule Ident [Cmd]
@@ -477,12 +477,49 @@ data Dir = Right
 -- main = getContents >>= print . parseProgram
 main = undefined
 
-type ProgramAlgebra x = ([x] -> x,           -- Program
-                          Ident -> [x] -> x, -- Rule
-                          Dir -> x,          -- Cmd1 (Turn Dir)
-                          Dir -> [x] -> x,   -- Cmd2 (Case Dir [Alt])
-                          Pat -> [x] -> x,   -- Alt
-                          Dir -> x          )-- Dir
+type ProgramAlgebra x = ([x] -> x,          -- Program
+                         x -> [x] -> x,     -- Rule
+                         Cmd -> x,          -- Cmd
+                         x -> [x] -> x,     -- Alt
+                         Pat -> x,          -- Pat
+                         Dir -> x,          -- Dir
+                         Ident -> x)        -- Ident
+
+foldProgram :: ProgramAlgebra p -> Program -> p
+foldProgram (program, rule, cmd, alt, pat, dir, id) = ff
+   where ff (Program xs) = program (map fr xs)
+         fr (Rule x xs)  = rule (fi x) (map fc xs)
+         fc x            = cmd x
+         fa (Alt x xs)   = alt (fp x) (map fc xs)
+         fp x            = pat x
+         fd x            = dir x
+         fi x            = id x
+
+{-
+type ProgramAlgebra x = ([x] -> x,          -- Program
+                         x -> [x] -> x,     -- Rule
+                         Cmd -> x,          -- Cmd
+                         x -> [x] -> x,     -- Alt
+                         Pat -> x,          -- Pat
+                         Dir -> x)          -- Dir
+
+foldProgram :: ProgramAlgebra p -> Program -> p
+foldProgram (program, rule, cmd, alt, pat, dir) = ff
+   where ff (Program xs) = program (map fr xs)
+         fr (Rule x xs)  = rule x (map fc xs)
+         fc x            = cmd x
+         fa (Alt x xs)   = alt x (map fc xs)
+         fp x            = pat x
+         fd x            = dir x
+-}
+
+{-
+type ProgramAlgebra x = ([x] -> x,          -- Program
+                        x -> [x] -> x,     -- Rule
+                        Dir -> x,          -- Cmd1 (Turn Dir)
+                        Dir -> [x] -> x,   -- Cmd2 (Case Dir [Alt])
+                        Pat -> [x] -> x,   -- Alt
+                        Dir -> x          )-- Dir
 
 foldProgram :: ProgramAlgebra p -> Program -> p
 foldProgram (program, rule, cmd1, cmd2, alt, dir) = ff
@@ -491,6 +528,14 @@ foldProgram (program, rule, cmd1, cmd2, alt, dir) = ff
          fc (Turn x)     = cmd1 x
          fc (Case x xs)  = cmd2 x (map fa xs)
          fa (Alt x xs)   = alt x (map fc xs)
+
+hasStart :: ProgramAlgebra Bool
+hasStart = ((\x -> False), (\x -> r), (\x -> False), (\x -> False), False, False)
+  where r x = x == "start"
+
+check :: Program -> Bool
+check = foldProgram hasStart
+-}
 {-# LINE 1 "templates/GenericTemplate.hs" #-}
 
 
