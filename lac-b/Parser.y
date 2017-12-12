@@ -1,6 +1,5 @@
 {
-module Main where
-import Scan
+module Parser where
 }
 
 %name parseProgram
@@ -49,9 +48,10 @@ cmds    : Cmd                  { [$1] }
 Cmd     : go                   { Go }
         | take                 { Take }
         | mark                 { Mark }
-        | nothing              { Main.Nothing }
+        | nothing              { Parser.Nothing }
         | turn Dir             { Turn $2 }
         | case Dir of alts end { Case $2 $4 }
+        | letter               { Next $1 }
 
 alts    : Alt                  { [$1] }
         | alts ';' Alt         { $3 : $1 }
@@ -63,21 +63,49 @@ Pat     : empty                { Empty }
         | debris               { Debris }
         | asteroid             { Asteroid }
         | boundary             { Boundary }
+        | '_'                  { Rest }
 
-Dir     : right                { Main.Right }
-        | left                 { Main.Left }
+Dir     : right                { Parser.Right }
+        | left                 { Parser.Left }
         | front                { Front }
 
 {
 parseError :: [Token] -> a
 parseError _ = error "Parse error"
 
+data Token = TArrow
+           | TDot
+           | TComma
+           | TGo
+           | TTake
+           | TMark
+           | TNothing
+           | TTurn
+           | TCase
+           | TOf
+           | TEnd
+           | TLeft
+           | TRight
+           | TFront
+           | TSemicolon
+           | TEmpty
+           | TLambda
+           | TDebris
+           | TAsteroid
+           | TBoundary
+           | TUnderscore
+           | TLetter String
+           | TDigit Int
+           | TPlus
+           | TMinus
+  deriving (Eq, Show)
+
 newtype Program = Program { rules :: [Rule] }
     deriving Show
 
 data Rule = Rule { id :: Ident,
                    cmds :: [Cmd] }
-    deriving Show
+  deriving Show
 
 type Ident = String
 
@@ -87,25 +115,23 @@ data Cmd = Go
          | Nothing
          | Turn Dir
          | Case Dir [Alt]
-         | Ident
-    deriving Show
+         | Next Ident
+  deriving Show
 
 data Alt = Alt { pat     :: Pat,
                  altCmds :: [Cmd] }
-    deriving Show
+  deriving Show
 
 data Pat = Lambda
          | Debris
          | Asteroid
          | Boundary
          | Empty
-    deriving Show
+         | Rest
+  deriving Show
 
 data Dir = Right
-        | Left
-        | Front
-    deriving Show
-
--- main = getContents >>= print . parseProgram
-main = undefined
+         | Left
+         | Front
+  deriving Show
 }
