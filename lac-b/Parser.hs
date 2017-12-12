@@ -1,6 +1,5 @@
 {-# OPTIONS_GHC -w #-}
-module Main where
-import Scan
+module Parser where
 import Control.Applicative(Applicative(..))
 import Control.Monad (ap)
 
@@ -48,14 +47,15 @@ action_6 (18) = happyShift action_12
 action_6 (19) = happyShift action_13
 action_6 (20) = happyShift action_14
 action_6 (21) = happyShift action_15
+action_6 (34) = happyShift action_16
 action_6 (7) = happyGoto action_8
 action_6 (8) = happyGoto action_9
 action_6 _ = happyFail
 
 action_7 _ = happyReduce_3
 
-action_8 (14) = happyShift action_21
-action_8 (15) = happyShift action_22
+action_8 (14) = happyShift action_22
+action_8 (15) = happyShift action_23
 action_8 _ = happyFail
 
 action_9 _ = happyReduce_5
@@ -68,62 +68,64 @@ action_12 _ = happyReduce_9
 
 action_13 _ = happyReduce_10
 
-action_14 (24) = happyShift action_17
-action_14 (25) = happyShift action_18
-action_14 (26) = happyShift action_19
-action_14 (12) = happyGoto action_20
+action_14 (24) = happyShift action_18
+action_14 (25) = happyShift action_19
+action_14 (26) = happyShift action_20
+action_14 (12) = happyGoto action_21
 action_14 _ = happyFail
 
-action_15 (24) = happyShift action_17
-action_15 (25) = happyShift action_18
-action_15 (26) = happyShift action_19
-action_15 (12) = happyGoto action_16
+action_15 (24) = happyShift action_18
+action_15 (25) = happyShift action_19
+action_15 (26) = happyShift action_20
+action_15 (12) = happyGoto action_17
 action_15 _ = happyFail
 
-action_16 (22) = happyShift action_24
-action_16 _ = happyFail
+action_16 _ = happyReduce_13
 
-action_17 _ = happyReduce_22
+action_17 (22) = happyShift action_25
+action_17 _ = happyFail
 
-action_18 _ = happyReduce_21
+action_18 _ = happyReduce_24
 
 action_19 _ = happyReduce_23
 
-action_20 _ = happyReduce_11
+action_20 _ = happyReduce_25
 
-action_21 _ = happyReduce_4
+action_21 _ = happyReduce_11
 
-action_22 (16) = happyShift action_10
-action_22 (17) = happyShift action_11
-action_22 (18) = happyShift action_12
-action_22 (19) = happyShift action_13
-action_22 (20) = happyShift action_14
-action_22 (21) = happyShift action_15
-action_22 (8) = happyGoto action_23
-action_22 _ = happyFail
+action_22 _ = happyReduce_4
 
-action_23 _ = happyReduce_6
+action_23 (16) = happyShift action_10
+action_23 (17) = happyShift action_11
+action_23 (18) = happyShift action_12
+action_23 (19) = happyShift action_13
+action_23 (20) = happyShift action_14
+action_23 (21) = happyShift action_15
+action_23 (34) = happyShift action_16
+action_23 (8) = happyGoto action_24
+action_23 _ = happyFail
 
-action_24 (28) = happyShift action_28
-action_24 (29) = happyShift action_29
-action_24 (30) = happyShift action_30
-action_24 (31) = happyShift action_31
-action_24 (32) = happyShift action_32
-action_24 (9) = happyGoto action_25
-action_24 (10) = happyGoto action_26
-action_24 (11) = happyGoto action_27
-action_24 _ = happyFail
+action_24 _ = happyReduce_6
 
-action_25 (23) = happyShift action_34
-action_25 (27) = happyShift action_35
+action_25 (28) = happyShift action_29
+action_25 (29) = happyShift action_30
+action_25 (30) = happyShift action_31
+action_25 (31) = happyShift action_32
+action_25 (32) = happyShift action_33
+action_25 (33) = happyShift action_34
+action_25 (9) = happyGoto action_26
+action_25 (10) = happyGoto action_27
+action_25 (11) = happyGoto action_28
 action_25 _ = happyFail
 
-action_26 _ = happyReduce_13
+action_26 (23) = happyShift action_36
+action_26 (27) = happyShift action_37
+action_26 _ = happyFail
 
-action_27 (13) = happyShift action_33
-action_27 _ = happyFail
+action_27 _ = happyReduce_14
 
-action_28 _ = happyReduce_16
+action_28 (13) = happyShift action_35
+action_28 _ = happyFail
 
 action_29 _ = happyReduce_17
 
@@ -133,31 +135,37 @@ action_31 _ = happyReduce_19
 
 action_32 _ = happyReduce_20
 
-action_33 (16) = happyShift action_10
-action_33 (17) = happyShift action_11
-action_33 (18) = happyShift action_12
-action_33 (19) = happyShift action_13
-action_33 (20) = happyShift action_14
-action_33 (21) = happyShift action_15
-action_33 (7) = happyGoto action_37
-action_33 (8) = happyGoto action_9
-action_33 _ = happyFail
+action_33 _ = happyReduce_21
 
-action_34 _ = happyReduce_12
+action_34 _ = happyReduce_22
 
-action_35 (28) = happyShift action_28
-action_35 (29) = happyShift action_29
-action_35 (30) = happyShift action_30
-action_35 (31) = happyShift action_31
-action_35 (32) = happyShift action_32
-action_35 (10) = happyGoto action_36
-action_35 (11) = happyGoto action_27
+action_35 (16) = happyShift action_10
+action_35 (17) = happyShift action_11
+action_35 (18) = happyShift action_12
+action_35 (19) = happyShift action_13
+action_35 (20) = happyShift action_14
+action_35 (21) = happyShift action_15
+action_35 (34) = happyShift action_16
+action_35 (7) = happyGoto action_39
+action_35 (8) = happyGoto action_9
 action_35 _ = happyFail
 
-action_36 _ = happyReduce_14
+action_36 _ = happyReduce_12
 
-action_37 (15) = happyShift action_22
-action_37 _ = happyReduce_15
+action_37 (28) = happyShift action_29
+action_37 (29) = happyShift action_30
+action_37 (30) = happyShift action_31
+action_37 (31) = happyShift action_32
+action_37 (32) = happyShift action_33
+action_37 (33) = happyShift action_34
+action_37 (10) = happyGoto action_38
+action_37 (11) = happyGoto action_28
+action_37 _ = happyFail
+
+action_38 _ = happyReduce_15
+
+action_39 (15) = happyShift action_23
+action_39 _ = happyReduce_16
 
 happyReduce_1 = happySpecReduce_1  4 happyReduction_1
 happyReduction_1 (HappyAbsSyn5  happy_var_1)
@@ -228,7 +236,7 @@ happyReduction_9 _
 happyReduce_10 = happySpecReduce_1  8 happyReduction_10
 happyReduction_10 _
 	 =  HappyAbsSyn8
-		 (Main.Nothing
+		 (Parser.Nothing
 	)
 
 happyReduce_11 = happySpecReduce_2  8 happyReduction_11
@@ -250,75 +258,88 @@ happyReduction_12 (_ `HappyStk`
 		 (Case happy_var_2 happy_var_4
 	) `HappyStk` happyRest
 
-happyReduce_13 = happySpecReduce_1  9 happyReduction_13
-happyReduction_13 (HappyAbsSyn10  happy_var_1)
-	 =  HappyAbsSyn9
-		 ([happy_var_1]
+happyReduce_13 = happySpecReduce_1  8 happyReduction_13
+happyReduction_13 (HappyTerminal (TLetter happy_var_1))
+	 =  HappyAbsSyn8
+		 (Next happy_var_1
 	)
 happyReduction_13 _  = notHappyAtAll 
 
-happyReduce_14 = happySpecReduce_3  9 happyReduction_14
-happyReduction_14 (HappyAbsSyn10  happy_var_3)
+happyReduce_14 = happySpecReduce_1  9 happyReduction_14
+happyReduction_14 (HappyAbsSyn10  happy_var_1)
+	 =  HappyAbsSyn9
+		 ([happy_var_1]
+	)
+happyReduction_14 _  = notHappyAtAll 
+
+happyReduce_15 = happySpecReduce_3  9 happyReduction_15
+happyReduction_15 (HappyAbsSyn10  happy_var_3)
 	_
 	(HappyAbsSyn9  happy_var_1)
 	 =  HappyAbsSyn9
 		 (happy_var_3 : happy_var_1
 	)
-happyReduction_14 _ _ _  = notHappyAtAll 
+happyReduction_15 _ _ _  = notHappyAtAll 
 
-happyReduce_15 = happySpecReduce_3  10 happyReduction_15
-happyReduction_15 (HappyAbsSyn7  happy_var_3)
+happyReduce_16 = happySpecReduce_3  10 happyReduction_16
+happyReduction_16 (HappyAbsSyn7  happy_var_3)
 	_
 	(HappyAbsSyn11  happy_var_1)
 	 =  HappyAbsSyn10
 		 (Alt happy_var_1 happy_var_3
 	)
-happyReduction_15 _ _ _  = notHappyAtAll 
-
-happyReduce_16 = happySpecReduce_1  11 happyReduction_16
-happyReduction_16 _
-	 =  HappyAbsSyn11
-		 (Empty
-	)
+happyReduction_16 _ _ _  = notHappyAtAll 
 
 happyReduce_17 = happySpecReduce_1  11 happyReduction_17
 happyReduction_17 _
 	 =  HappyAbsSyn11
-		 (Lambda
+		 (Empty
 	)
 
 happyReduce_18 = happySpecReduce_1  11 happyReduction_18
 happyReduction_18 _
 	 =  HappyAbsSyn11
-		 (Debris
+		 (Lambda
 	)
 
 happyReduce_19 = happySpecReduce_1  11 happyReduction_19
 happyReduction_19 _
 	 =  HappyAbsSyn11
-		 (Asteroid
+		 (Debris
 	)
 
 happyReduce_20 = happySpecReduce_1  11 happyReduction_20
 happyReduction_20 _
 	 =  HappyAbsSyn11
+		 (Asteroid
+	)
+
+happyReduce_21 = happySpecReduce_1  11 happyReduction_21
+happyReduction_21 _
+	 =  HappyAbsSyn11
 		 (Boundary
 	)
 
-happyReduce_21 = happySpecReduce_1  12 happyReduction_21
-happyReduction_21 _
-	 =  HappyAbsSyn12
-		 (Main.Right
-	)
-
-happyReduce_22 = happySpecReduce_1  12 happyReduction_22
+happyReduce_22 = happySpecReduce_1  11 happyReduction_22
 happyReduction_22 _
-	 =  HappyAbsSyn12
-		 (Main.Left
+	 =  HappyAbsSyn11
+		 (Rest
 	)
 
 happyReduce_23 = happySpecReduce_1  12 happyReduction_23
 happyReduction_23 _
+	 =  HappyAbsSyn12
+		 (Parser.Right
+	)
+
+happyReduce_24 = happySpecReduce_1  12 happyReduction_24
+happyReduction_24 _
+	 =  HappyAbsSyn12
+		 (Parser.Left
+	)
+
+happyReduce_25 = happySpecReduce_1  12 happyReduction_25
+happyReduction_25 _
 	 =  HappyAbsSyn12
 		 (Front
 	)
@@ -393,12 +414,39 @@ happySeq = happyDontSeq
 parseError :: [Token] -> a
 parseError _ = error "Parse error"
 
+data Token = TArrow
+           | TDot
+           | TComma
+           | TGo
+           | TTake
+           | TMark
+           | TNothing
+           | TTurn
+           | TCase
+           | TOf
+           | TEnd
+           | TLeft
+           | TRight
+           | TFront
+           | TSemicolon
+           | TEmpty
+           | TLambda
+           | TDebris
+           | TAsteroid
+           | TBoundary
+           | TUnderscore
+           | TLetter String
+           | TDigit Int
+           | TPlus
+           | TMinus
+  deriving (Eq, Show)
+
 newtype Program = Program { rules :: [Rule] }
     deriving Show
 
 data Rule = Rule { id :: Ident,
                    cmds :: [Cmd] }
-    deriving Show
+  deriving Show
 
 type Ident = String
 
@@ -408,27 +456,25 @@ data Cmd = Go
          | Nothing
          | Turn Dir
          | Case Dir [Alt]
-         | Ident
-    deriving Show
+         | Next Ident
+  deriving Show
 
-data Alt = Alt { pat :: Pat,
-                 altcmds :: [Cmd]
-}
-
-    deriving Show
+data Alt = Alt { pat     :: Pat,
+                 altCmds :: [Cmd] }
+  deriving Show
 
 data Pat = Lambda
          | Debris
          | Asteroid
          | Boundary
          | Empty
-    deriving Show
+         | Rest
+  deriving Show
 
-data Dir = Right | Left | Front
-    deriving Show
-
--- main = getContents >>= print . parseProgram
-main = undefined
+data Dir = Right
+         | Left
+         | Front
+  deriving Show
 {-# LINE 1 "templates/GenericTemplate.hs" #-}
 
 

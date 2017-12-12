@@ -1,5 +1,5 @@
 {
-module Scan where
+module Main where
 }
 
 %wrapper "basic"
