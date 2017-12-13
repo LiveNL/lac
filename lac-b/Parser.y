@@ -136,27 +136,21 @@ data Dir = Right
 -- main = getContents >>= print . parseProgram
 main = undefined
 
-{-
-type ProgramAlgebra x = ([x] -> x,          -- Program
-                         x -> [x] -> x,     -- Rule
-                         Cmd -> x,          -- Cmd
-                         x -> [x] -> x,     -- Alt
-                         Pat -> x,          -- Pat
-                         Dir -> x,          -- Dir
-                         Ident -> x)        -- Ident
-                        -}
+type ProgramAlgebra p r x a = ([r] -> p,         -- program
+                              Ident -> [x] -> r, -- rule
+                              x,                 -- go
+                              x,                 -- mark
+                              x,                 -- nothing
+                              Dir -> x,          -- turn
+                              Dir -> [a] -> x,   -- case
+                              Ident -> x,        -- next
+                              Pat -> [x] -> a)   -- alt
 
-type CmdAlgebra x a = ( x, -- go )
-                        x, -- mark
-                        x, -- nothing
-                        Dir -> x, -- turn
-                        Dir -> [a] -> x, -- case
-                        Ident -> x,     -- next
-                        Pat -> [x] -> a) -- alt
-
-foldCmd :: CmdAlgebra x a -> Cmd -> x
-foldCmd (go, mark, nothing, turn, c, next, alt) = ff
-  where ff Go = go
+foldCmd :: ProgramAlgebra p r x a -> Program -> p
+foldCmd (program, rule, go, mark, nothing, turn, c, next, alt) = fp
+  where fp (Program xs) = program (map fr xs)
+        fr (Rule x xs) = rule x (map ff xs)
+        ff Go = go
         ff Mark = mark
         ff Parser.Nothing = nothing
         ff (Turn x) = turn x
