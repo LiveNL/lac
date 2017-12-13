@@ -8,16 +8,13 @@ import Data.Map (Map)
 import qualified Data.Map as L
 import Control.Monad (replicateM)
 import Data.Char (isSpace)
-import Data.Maybe
+import Data.Maybe hiding (Nothing)
 
 import Debug.Trace
 
-
-type Space     =  Map Pos Contents
-type Size      =  Int
-type Pos       =  (Int, Int)
-data Contents  =  Empty | Lambda | Debris | Asteroid | Boundary
-  deriving (Eq, Show)
+import Info
+import Scan
+import Parser
 
 parseSpace :: Parser Char Space
 parseSpace =
@@ -43,9 +40,8 @@ contentsTable =
   [(Empty,'.'),(Lambda,'\\'),(Debris,'%'),(Asteroid,'O'),(Boundary,'#')]
 
 -- These three should be defined by you
-type Ident = String
 type Commands = [Cmd]
-type Heading = ()
+type Heading = Dir
 
 type Environment = Map Ident Commands
 
@@ -82,8 +78,9 @@ contentToString :: Contents -> String
 contentToString c = [(fromJust (lookup c contentsTable))]
 
 {- Exercise 8 -}
-toEnvironment :: String -> Environment
-toEnvironment = undefined
+toEnvironment :: String -> Environment -- Check nog implementeren(!!)
+toEnvironment s = L.fromList [(i, c) | (Rule i c) <- scanParse]
+  where scanParse = parseProgram (alexScanTokens s)
 
 {- Exercise 9 -}
 step :: Environment -> ArrowState -> Step
