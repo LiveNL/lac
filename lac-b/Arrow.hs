@@ -43,8 +43,8 @@ contentsTable =
   [(Empty,'.'),(Lambda,'\\'),(Debris,'%'),(Asteroid,'O'),(Boundary,'#')]
 
 -- These three should be defined by you
-type Ident = ()
-type Commands = ()
+type Ident = String
+type Commands = [Cmd]
 type Heading = ()
 
 type Environment = Map Ident Commands
@@ -80,3 +80,11 @@ printer (((x, y), z):k@((a, b), c):xs) | x == a    = contentToString z ++ printe
 
 contentToString :: Contents -> String
 contentToString c = [(fromJust (lookup c contentsTable))]
+
+{- Exercise 8 -}
+toEnvironment :: String -> Environment
+toEnvironment = undefined
+
+{- Exercise 9 -}
+step :: Environment -> ArrowState -> Step
+step = undefined
