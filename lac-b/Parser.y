@@ -158,59 +158,15 @@ foldCmd (program, rule, go, mark, nothing, turn, c, next, alt) = fp
         ff (Next x) = next x
         fa (Alt x xs) = alt x (map ff xs)
 
-{-
-foldProgram :: ProgramAlgebra p -> Program -> p
-foldProgram (program, rule, cmd, alt, pat, dir, id) = ff
-   where ff (Program xs) = program (map fr xs)
-         fr (Rule x xs)  = rule (fi x) (map fc xs)
-         fc x            = cmd x
-         fc (Turn x)     = cmd x
-         fa (Alt x xs)   = alt (fp x) (map fc xs)
-         fp x            = pat x
-         fd x            = dir x
-         fi x            = id x
--}
+-- hasStart :: ProgramAlgebra Bool Bool Bool Bool
+-- hasStart = (all, (\x _ -> r x), (\x -> False), (\x -> False))
+--  where r x = x == "start"
 
-{-
-type ProgramAlgebra x = ([x] -> x,          -- Program
-                         x -> [x] -> x,     -- Rule
-                         Cmd -> x,          -- Cmd
-                         x -> [x] -> x,     -- Alt
-                         Pat -> x,          -- Pat
-                         Dir -> x)          -- Dir
+countGo :: ProgramAlgebra Int Int Int Int
+countGo = (sum, (\_ -> sum), 1, 0, 0, (\_ -> 0), (\_ xs -> sum xs), (\_ -> 0), (\_ xs -> sum xs))
 
-foldProgram :: ProgramAlgebra p -> Program -> p
-foldProgram (program, rule, cmd, alt, pat, dir) = ff
-   where ff (Program xs) = program (map fr xs)
-         fr (Rule x xs)  = rule x (map fc xs)
-         fc x            = cmd x
-         fa (Alt x xs)   = alt x (map fc xs)
-         fp x            = pat x
-         fd x            = dir x
--}
+-- check :: Program -> Bool
+-- check = foldCmd hasStart
 
-{-
-type ProgramAlgebra x = ([x] -> x,          -- Program
-                        x -> [x] -> x,     -- Rule
-                        Dir -> x,          -- Cmd1 (Turn Dir)
-                        Dir -> [x] -> x,   -- Cmd2 (Case Dir [Alt])
-                        Pat -> [x] -> x,   -- Alt
-                        Dir -> x          )-- Dir
-
-foldProgram :: ProgramAlgebra p -> Program -> p
-foldProgram (program, rule, cmd1, cmd2, alt, dir) = ff
-   where ff (Program xs) = program (map fr xs)
-         fr (Rule x xs)  = rule x (map fc xs)
-         fc (Turn x)     = cmd1 x
-         fc (Case x xs)  = cmd2 x (map fa xs)
-         fa (Alt x xs)   = alt x (map fc xs)
-
-hasStart :: ProgramAlgebra Bool
-hasStart = ((\x -> False), (\x -> r), (\x -> False), (\x -> False), False, False)
-  where r x = x == "start"
-
-check :: Program -> Bool
-check = foldProgram hasStart
--}
 
 }
