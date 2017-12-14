@@ -413,6 +413,7 @@ happySeq = happyDontSeq
 parseError :: [Token] -> a
 parseError _ = error "Parse error"
 
+{- Exercise 2 -}
 data Program = Program [Rule]
     deriving Show
 
@@ -445,9 +446,6 @@ data Dir = Right
          | Left
          | Front
   deriving Show
-
--- main = getContents >>= print . parseProgram
-main = undefined
 
 type ProgramAlgebra p r x a = ([r] -> p,            -- program
                               Ident -> [x] -> r,    -- rule

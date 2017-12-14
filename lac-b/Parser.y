@@ -1,3 +1,4 @@
+-- Jordi Wippert & Kevin Wilbrink
 {
 module Parser where
 import Data.List
@@ -34,6 +35,7 @@ ident           { TIdent $$ }
 
 %%
 
+{- Exercise 3 -}
 Program : rules                { reverse $1 }
 
 rules   : Rule                 { [$1] }
@@ -72,6 +74,7 @@ Dir     : right                { Parser.Right }
 parseError :: [Token] -> a
 parseError _ = error "Parse error"
 
+{- Exercise 2 -}
 data Program = Program [Rule]
     deriving Show
 
@@ -105,9 +108,7 @@ data Dir = Right
          | Front
   deriving Show
 
--- main = getContents >>= print . parseProgram
-main = undefined
-
+{- Exercise 5 -}
 type ProgramAlgebra p r x a = ([r] -> p,            -- program
                               Ident -> [x] -> r,    -- rule
                               x,                    -- go
@@ -132,6 +133,7 @@ foldCmd (program, rule, go, take, mark, nothing, turn, c, next, alt) = fp
         ff (Next x) = next x
         fa (Alt x xs) = alt x (map ff xs)
 
+{- Exercise 6 -}
 -- There are no calls to undefined rules (rules may be used before they are defined though)
 notUndef :: ProgramAlgebra Bool (Ident,[Ident]) [Ident] [Ident]
 notUndef = ((\xs -> f xs), (\x xs -> (x, (concat xs))), [""], [""], [""], [""], (\x -> [""]), (\_ xs -> concat xs), (\x -> [x]), (\_ x -> concat x))

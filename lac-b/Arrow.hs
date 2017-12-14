@@ -92,3 +92,14 @@ toEnvironment s = L.fromList [(i, c) | (Rule i c) <- program]
 {- Exercise 9 -}
 step :: Environment -> ArrowState -> Step
 step = undefined
+
+{- Exercise 10
+Note how recursion affects the size of the command stack during execution. Does it matter whether the recursive call is in the middle of a command sequence or at the very end of the command sequence? Include your observations as a comment.
+
+Recursion affects the size in such way that when a call is done to a 'Next' (our data type for identifying Identifiers as commands), it will add the commands of the corresponding rule to the stack, this could increase the stack unlimited.
+
+The added commands will be executed before the remaining stack. I.E. if a recursing call is being done (so, to itself), in the middle of the commands from the rule that it was executing, the rest of these commands will be only after it executed its added list of commands. If the recursive call is in the end of the list, all commands will be executed already before adding the new commands to the list. So it only matters to the order of execution instead of affecting the size when it would be executed from the middle.
+
+-}
+
+

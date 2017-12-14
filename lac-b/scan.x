@@ -1,3 +1,4 @@
+-- Jordi Wippert & Kevin Wilbrink
 {
 module Scan where
 }
@@ -57,6 +58,7 @@ data Token = TArrow
            | TIdent String
   deriving (Eq, Show)
 
+{- Exercise 1 -}
 main = do s <- getContents
           print (alexScanTokens s)
 }
