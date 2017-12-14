@@ -90,10 +90,10 @@ data Cmd = Go
          | Turn Dir
          | Case Dir [Alt]
          | Next Ident
-  deriving Show
+  deriving (Show, Eq)
 
 data Alt = Alt Contents [Cmd]
-    deriving Show
+  deriving (Show, Eq)
 
 data Contents = Lambda
               | Debris
@@ -106,7 +106,7 @@ data Contents = Lambda
 data Dir = Right
          | Left
          | Front
-  deriving Show
+  deriving (Show, Eq)
 
 {- Exercise 5 -}
 type ProgramAlgebra p r x a = ([r] -> p,            -- program

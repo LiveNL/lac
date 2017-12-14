@@ -66,7 +66,7 @@ to the length of the list being parsed. For example, the parser in GHC used to u
 and as a result it failed to parse some Happy-generated modules due to running out of stack space!
 
  -}
- 
+
  {- Exercise 7 -}
 spacePrinter :: (Show b, Show a, Eq a) => Map (a, b) Contents -> [Char]
 spacePrinter s = pos' (last (L.toList s)) ++ printer (L.toList s)
@@ -78,10 +78,10 @@ printer (((x, y), z):k@((a, b), c):xs) | x == a    = contentToString z ++ printe
                                        | otherwise = contentToString z ++ "\n" ++ printer (k:xs)
 
 contentToString :: Contents -> String
-contentToString c = [(fromJust (lookup c contentsTable))]
+contentToString c = [(M.fromJust (lookup c contentsTable))]
 
 {- Exercise 8 -}
-toEnvironment :: String -> Environment -- Check nog implementeren(!!)
+toEnvironment :: String -> Environment
 toEnvironment s = L.fromList [(i, c) | (Rule i c) <- program]
   where scanParse = parseProgram (alexScanTokens s)
         program = if check (Program scanParse)
@@ -91,11 +91,11 @@ toEnvironment s = L.fromList [(i, c) | (Rule i c) <- program]
 {- Exercise 9 -}
 step :: Environment -> ArrowState -> Step
 step e a@(ArrowState _ _ _ st) = action topItem a e
-  where topItem = head (st)
+  where topItem = head st
 
 action :: Cmd -> ArrowState -> Environment -> Step
 action Go (ArrowState sp p h (_:xs)) _ | field' == Empty || field' == Lambda || field' == Debris = Ok (ArrowState sp pos' h xs)
-                                       | otherwise                                               = Ok (ArrowState sp p    h xs) 
+                                       | otherwise                                               = Ok (ArrowState sp p    h xs)
   where field' = nextField h p sp
         pos'   = nextPos h p
 
@@ -105,7 +105,7 @@ action Take (ArrowState sp p h (_:xs)) _ = Ok (ArrowState sp' p h xs)
 action Mark (ArrowState sp p h (_:xs)) _ = Ok (ArrowState sp' p h xs)
   where sp' = L.insert p Lambda sp
 
-action (Nothing) e _ = Ok e
+action Nothing e _ = Ok e
 
 action (Turn x)   (ArrowState sp p _ (_:xs)) _ = Ok (ArrowState sp p x xs)
 
@@ -141,3 +141,8 @@ Recursion affects the size in such way that when a call is done to a 'Next' (our
 The added commands will be executed before the remaining stack. I.E. if a recursing call is being done (so, to itself), in the middle of the commands from the rule that it was executing, the rest of these commands will be only after it executed its added list of commands. If the recursive call is in the end of the list, all commands will be executed already before adding the new commands to the list. So it only matters to the order of execution instead of affecting the size when it would be executed from the middle.
 
 -}
+
+{- Exercise 11 -}
+
+interactive :: Environment -> ArrowState -> IO ()
+interactive e a = undefined

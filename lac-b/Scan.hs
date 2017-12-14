@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-unused-binds -fno-warn-missing-signatures #-}
 {-# LANGUAGE CPP #-}
-{-# LINE 1 "Scan.x" #-}
+{-# LINE 2 "Scan.x" #-}
 
 module Scan where
 
@@ -345,7 +345,7 @@ alex_accept = listArray (0::Int,94) [AlexAccNone,AlexAccNone,AlexAccNone,AlexAcc
 
 alex_actions = array (0::Int,83) [(82,alex_action_2),(81,alex_action_3),(80,alex_action_4),(79,alex_action_5),(78,alex_action_6),(77,alex_action_7),(76,alex_action_8),(75,alex_action_9),(74,alex_action_10),(73,alex_action_11),(72,alex_action_12),(71,alex_action_13),(70,alex_action_14),(69,alex_action_15),(68,alex_action_16),(67,alex_action_17),(66,alex_action_18),(65,alex_action_19),(64,alex_action_20),(63,alex_action_21),(62,alex_action_22),(61,alex_action_23),(60,alex_action_23),(59,alex_action_23),(58,alex_action_23),(57,alex_action_23),(56,alex_action_23),(55,alex_action_23),(54,alex_action_23),(53,alex_action_23),(52,alex_action_23),(51,alex_action_23),(50,alex_action_23),(49,alex_action_23),(48,alex_action_23),(47,alex_action_23),(46,alex_action_23),(45,alex_action_23),(44,alex_action_23),(43,alex_action_23),(42,alex_action_23),(41,alex_action_23),(40,alex_action_23),(39,alex_action_23),(38,alex_action_23),(37,alex_action_23),(36,alex_action_23),(35,alex_action_23),(34,alex_action_23),(33,alex_action_23),(32,alex_action_23),(31,alex_action_23),(30,alex_action_23),(29,alex_action_23),(28,alex_action_23),(27,alex_action_23),(26,alex_action_23),(25,alex_action_23),(24,alex_action_23),(23,alex_action_23),(22,alex_action_23),(21,alex_action_23),(20,alex_action_23),(19,alex_action_23),(18,alex_action_23),(17,alex_action_23),(16,alex_action_23),(15,alex_action_23),(14,alex_action_23),(13,alex_action_23),(12,alex_action_23),(11,alex_action_23),(10,alex_action_23),(9,alex_action_23),(8,alex_action_23),(7,alex_action_23),(6,alex_action_23),(5,alex_action_23),(4,alex_action_23),(3,alex_action_23),(2,alex_action_23),(1,alex_action_23),(0,alex_action_23)]
 
-{-# LINE 35 "Scan.x" #-}
+{-# LINE 36 "Scan.x" #-}
 
 data Token = TArrow
            | TDot
