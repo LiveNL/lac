@@ -9,7 +9,6 @@ import qualified Data.Map as L
 import Control.Monad (replicateM)
 import Data.Char (isSpace)
 import qualified Data.Maybe as M
-import Debug.Trace
 
 import Scan
 import Parser
@@ -37,12 +36,10 @@ spaces :: Parser Char String
 spaces = greedy (satisfy isSpace)
 
 contents :: Parser Char Contents
-contents =
-  choice (Prelude.map (\ (f,c) -> f <$ symbol c) contentsTable) <* spaces
+contents = choice (Prelude.map (\ (f,c) -> f <$ symbol c) contentsTable) <* spaces
 
 contentsTable :: [(Contents,Char)]
-contentsTable =
-  [(Empty,'.'),(Lambda,'\\'),(Debris,'%'),(Asteroid,'O'),(Boundary,'#')]
+contentsTable = [(Empty,'.'),(Lambda,'\\'),(Debris,'%'),(Asteroid,'O'),(Boundary,'#')]
 
 -- These three should be defined by you
 type Commands = [Cmd]
@@ -86,9 +83,8 @@ contentToString c = [(M.fromJust (lookup c contentsTable))]
 toEnvironment :: String -> Environment
 toEnvironment s = L.fromList [(i, c) | (Rule i c) <- program]
   where scanParse = parseProgram (alexScanTokens s)
-        program = if check (Program scanParse)
-                  then scanParse
-                  else error "Failed to add parse program (check failed)"
+        program   | check (Program scanParse) = scanParse
+                  | otherwise                 = error "Failed to add parse program (check failed)"
 
 {- Exercise 9 -}
 
@@ -104,12 +100,11 @@ step :: Environment -> ArrowState -> Step
 step e a@(ArrowState sp p h st) | null st   = Done sp p h
                                 | otherwise = action (head st) a e
 
-
 action :: Cmd -> ArrowState -> Environment -> Step
-action Go (ArrowState sp p h (_:xs)) _ | field' == Empty || field' == Lambda || field' == Debris = Ok (ArrowState sp pos' h xs)
-                                       | otherwise                                               = Ok (ArrowState sp p    h xs)
-                                       where field' = nextField h p sp
-                                             pos'   = nextPos h p
+action Go (ArrowState sp p h (_:xs)) _ | elem field [Empty, Lambda, Debris] = Ok (ArrowState sp pos' h xs)
+                                       | otherwise                          = Ok (ArrowState sp p    h xs)
+                                       where field = nextField h p sp
+                                             pos'  = nextPos h p
 
 action Take (ArrowState sp p h (_:xs)) _ = Ok (ArrowState sp' p h xs)
   where sp' = L.insert p Empty sp
@@ -124,10 +119,10 @@ action (Turn x) (ArrowState sp p h (_:xs)) _ = Ok (ArrowState sp p newHeading xs
                    | x == Right = next h
                    | x == Left = prev h
 
-action (Case x c) (ArrowState sp p h (_:xs)) _ | null test = Fail "Error"
-                                               | otherwise = Ok (ArrowState sp p h (test ++ xs))
-  where field' = checkField x h p sp
-        test = getCmd field' c
+action (Case x c) (ArrowState sp p h (_:xs)) _ | null getCmd' = Fail "Error"
+                                               | otherwise = Ok (ArrowState sp p h (getCmd' ++ xs))
+  where field   = checkField x h p sp
+        getCmd' = getCmd field c
 
 action (Next x) (ArrowState sp p h (_:xs)) e | find /= M.Nothing = Ok (ArrowState sp p h (((M.fromJust find)) ++ xs))
                                              | otherwise         = Fail "Stack is empty.."
@@ -150,9 +145,8 @@ nextField h (y,x) s = if M.isNothing n
         f North (y,x) s = lookup (y - 1,x) (L.toList s)
 
 checkField :: Dir -> Heading -> Pos -> Space -> Contents
-checkField d h (x,y) s = if M.isNothing (n newHeading)
-                         then Boundary
-                         else M.fromJust (n newHeading)
+checkField d h (x,y) s | M.isNothing (n newHeading) = Boundary
+                       | otherwise                  = M.fromJust (n newHeading)
   where n nh = f nh (x,y) s
         f East (y,x) s  = lookup (y,x + 1) (L.toList s)
         f South (y,x) s = lookup (y + 1,x) (L.toList s)
@@ -193,12 +187,17 @@ a2 = ArrowState (fst (head s2)) p h c2
 
 interactive :: Environment -> ArrowState -> IO ()
 interactive e a = do putStr (f (step e a))
-                     putStrLn "\nDo you want to continue? Press a key"
+                     putStrLn "\nTo continue, press a key!"
                      getChar
                      interactive e (x (step e a))
-  where x (Ok n) = n
-        x (Fail n) = error "Program failed to execute properly"
+  where x (Ok n)                    = n
+        x (Fail n)                  = error "Program failed to execute properly"
         f (Ok (ArrowState x _ _ _)) = spacePrinter x
-        f (Done _ _ _) = error "Arrow made it to the end, well done!"
+        f (Done _ _ _)              = error "Arrow made it to the end, well done!"
 
-
+{- BONUS exercise 14 -}
+batch :: Environment -> ArrowState -> (Space, Pos, Heading)
+batch e a = f (step e a)
+  where f (Done s p h) = (s, p, h)
+        f (Ok n)       = batch e n
+        f (Fail x)     = error x
