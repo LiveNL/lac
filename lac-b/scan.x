@@ -1,11 +1,11 @@
+-- Jordi Wippert & Kevin Wilbrink
 {
-module Main where
+module Scan where
 }
 
 %wrapper "basic"
 
-$digit = 0-9            -- digits
-$alpha = [a-zA-Z]       -- alphabetic characters
+$ident = [a-zA-Z0-9\+\-] -- alphabetic characters, digits and +/-
 
 tokens :-
   $white+     ;
@@ -31,11 +31,7 @@ tokens :-
   "Asteroid"  {\s -> TAsteroid}
   "Boundary"  {\s -> TBoundary}
   "_"         {\s -> TUnderscore}
-  $alpha+     {\s -> TLetter s}
-  $digit+     {\s -> TDigit (read s) }
-  "+"+        {\s -> TPlus}
-  "-"+        {\s -> TMinus}
-
+  $ident+     {\s -> TIdent s}
 
 {
 data Token = TArrow
@@ -59,13 +55,10 @@ data Token = TArrow
            | TAsteroid
            | TBoundary
            | TUnderscore
-           | TLetter String
-           | TDigit Int
-           | TPlus
-           | TMinus
+           | TIdent String
   deriving (Eq, Show)
 
+{- Exercise 1 -}
 main = do s <- getContents
           print (alexScanTokens s)
-
 }
