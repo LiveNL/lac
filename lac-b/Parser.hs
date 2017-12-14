@@ -257,7 +257,7 @@ happyReduction_12 (_ `HappyStk`
 	_ `HappyStk`
 	happyRest)
 	 = HappyAbsSyn8
-		 (Case happy_var_2 happy_var_4
+		 (Case happy_var_2 (reverse happy_var_4)
 	) `HappyStk` happyRest
 
 happyReduce_13 = happySpecReduce_1  8 happyReduction_13
@@ -288,7 +288,7 @@ happyReduction_16 (HappyAbsSyn7  happy_var_3)
 	_
 	(HappyAbsSyn11  happy_var_1)
 	 =  HappyAbsSyn10
-		 (Alt happy_var_1 happy_var_3
+		 (Alt happy_var_1 (reverse happy_var_3)
 	)
 happyReduction_16 _ _ _  = notHappyAtAll 
 

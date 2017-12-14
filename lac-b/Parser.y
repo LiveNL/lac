@@ -51,13 +51,13 @@ Cmd     : go                   { Go }
         | mark                 { Mark }
         | nothing              { Parser.Nothing }
         | turn Dir             { Turn $2 }
-        | case Dir of alts end { Case $2 $4 }
+        | case Dir of alts end { Case $2 (reverse $4) }
         | ident                { Next $1 }
 
 alts    : Alt                  { [$1] }
         | alts ';' Alt         { $3 : $1 }
 
-Alt     : Pat '->' cmds        { Alt $1 $3 }
+Alt     : Pat '->' cmds        { Alt $1 (reverse $3) }
 
 Pat     : empty                { Empty }
         | lamda                { Lambda }

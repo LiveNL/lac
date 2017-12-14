@@ -9,6 +9,7 @@ import qualified Data.Map as L
 import Control.Monad (replicateM)
 import Data.Char (isSpace)
 import qualified Data.Maybe as M
+import Debug.Trace
 
 import Scan
 import Parser
@@ -45,7 +46,8 @@ contentsTable =
 
 -- These three should be defined by you
 type Commands = [Cmd]
-type Heading = Dir
+data Heading = North | East | South | West
+  deriving (Show, Eq, Enum)
 
 type Environment = Map Ident Commands
 
@@ -89,15 +91,25 @@ toEnvironment s = L.fromList [(i, c) | (Rule i c) <- program]
                   else error "Failed to add parse program (check failed)"
 
 {- Exercise 9 -}
+
+next :: Heading -> Heading
+next West = North
+next d    = succ d
+
+prev :: Heading -> Heading
+prev North = West
+prev d     = pred d
+
 step :: Environment -> ArrowState -> Step
-step e a@(ArrowState _ _ _ st) = action topItem a e
-  where topItem = head st
+step e a@(ArrowState sp p h st) | null st   = Done sp p h
+                                | otherwise = action (head st) a e
+
 
 action :: Cmd -> ArrowState -> Environment -> Step
 action Go (ArrowState sp p h (_:xs)) _ | field' == Empty || field' == Lambda || field' == Debris = Ok (ArrowState sp pos' h xs)
                                        | otherwise                                               = Ok (ArrowState sp p    h xs)
-  where field' = nextField h p sp
-        pos'   = nextPos h p
+                                       where field' = nextField h p sp
+                                             pos'   = nextPos h p
 
 action Take (ArrowState sp p h (_:xs)) _ = Ok (ArrowState sp' p h xs)
   where sp' = L.insert p Empty sp
@@ -105,18 +117,21 @@ action Take (ArrowState sp p h (_:xs)) _ = Ok (ArrowState sp' p h xs)
 action Mark (ArrowState sp p h (_:xs)) _ = Ok (ArrowState sp' p h xs)
   where sp' = L.insert p Lambda sp
 
-action Nothing e _ = Ok e
+action Nothing (ArrowState sp p h (_:xs)) _ = Ok (ArrowState sp p h xs)
 
-action (Turn x)   (ArrowState sp p _ (_:xs)) _ = Ok (ArrowState sp p x xs)
+action (Turn x) (ArrowState sp p h (_:xs)) _ = Ok (ArrowState sp p newHeading xs)
+  where newHeading | x == Front = h
+                   | x == Right = next h
+                   | x == Left = prev h
 
 action (Case x c) (ArrowState sp p h (_:xs)) _ | null test = Fail "Error"
                                                | otherwise = Ok (ArrowState sp p h (test ++ xs))
-  where field' = nextField x p sp
+  where field' = checkField x h p sp
         test = getCmd field' c
 
-action (Next x) (ArrowState sp p h (_:xs)) e | find /= M.Nothing = Ok (ArrowState sp p h ((M.fromJust find) ++ xs))
+action (Next x) (ArrowState sp p h (_:xs)) e | find /= M.Nothing = Ok (ArrowState sp p h (((M.fromJust find)) ++ xs))
                                              | otherwise         = Fail "Stack is empty.."
-  where find = lookup x (L.toList e)
+  where find = (lookup x (reverse (L.toList e)))
 
 getCmd :: Contents -> [Alt] -> [Cmd]
 getCmd f [] = []
@@ -125,13 +140,33 @@ getCmd f ((Alt co cmd):xs) | co == f    = cmd
                            | otherwise  = getCmd f xs
 
 nextField :: Heading -> Pos -> Space -> Contents
-nextField Right (x,y) s = M.fromJust (lookup (x, y + 1) (L.toList s))
-nextField Left  (x,y) s = M.fromJust (lookup (x, y - 1) (L.toList s))
-nextField _     _     _ = Boundary
+nextField h (y,x) s = if M.isNothing n
+                      then Boundary
+                      else M.fromJust n
+  where n = f h (y,x) s
+        f East (y,x) s  = lookup (y,x + 1) (L.toList s)
+        f South (y,x) s = lookup (y + 1,x) (L.toList s)
+        f West (y,x) s  = lookup (y,x - 1) (L.toList s)
+        f North (y,x) s = lookup (y - 1,x) (L.toList s)
+
+checkField :: Dir -> Heading -> Pos -> Space -> Contents
+checkField d h (x,y) s = if M.isNothing (n newHeading)
+                         then Boundary
+                         else M.fromJust (n newHeading)
+  where n nh = f nh (x,y) s
+        f East (y,x) s  = lookup (y,x + 1) (L.toList s)
+        f South (y,x) s = lookup (y + 1,x) (L.toList s)
+        f West (y,x) s  = lookup (y,x - 1) (L.toList s)
+        f North (y,x) s = lookup (y - 1,x) (L.toList s)
+        newHeading | d == Front = h
+                   | d == Right = next h
+                   | d == Left = prev h
 
 nextPos :: Heading -> Pos -> Pos
-nextPos Right (x, y) = (x, y + 1)
-nextPos Left  (x, y) = (x, 1 - y)
+nextPos East (y,x)  = (y,x + 1)
+nextPos South (y,x) = (y + 1,x)
+nextPos West (y,x)  = (y,x - 1)
+nextPos North (y,x) = (y - 1,x)
 
 {- Exercise 10
 Note how recursion affects the size of the command stack during execution. Does it matter whether the recursive call is in the middle of a command sequence or at the very end of the command sequence? Include your observations as a comment.
@@ -144,5 +179,22 @@ The added commands will be executed before the remaining stack. I.E. if a recurs
 
 {- Exercise 11 -}
 
+e = toEnvironment "start       -> turn right, go, turn left, firstArg.  turnAround  -> turn right, turn right.  return      -> case front of Boundary  ->  nothing; _         ->  go, return end.  firstArg    -> case left of Lambda  ->  go, firstArg, mark, go; _       ->  turnAround, return, turn left, go, go, turn left, secondArg end.  secondArg   -> case left of Lambda  ->  go, secondArg, mark, go; _       ->  turnAround, return, turn left, go, turn left end."
+
+s = parse parseSpace "(4,14)\n\\\\\\\\\\..........\n...............\n\\\\\\\\\\\\\\........\n...............\n...............\n"
+
+c = [Turn Right,Go,Turn Left,Next "firstArg"]
+h = East
+p = (0,0)
+a = ArrowState (fst (head s)) p h c
+
 interactive :: Environment -> ArrowState -> IO ()
-interactive e a = undefined
+interactive e a = do putStr (show (step e a) ++ "\n")
+                     k <- getChar
+                     case k of
+                       'k' -> do interactive e (x (step e a))
+  where x (Ok n) = n
+        x (Fail n) = error "FUCK"
+        x (Done _ _ _) = error "DONE"
+
+
