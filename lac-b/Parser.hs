@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -w #-}
 module Parser where
 import Data.List
-import Debug.Trace
+import Scan
 import Control.Applicative(Applicative(..))
 import Control.Monad (ap)
 
@@ -40,7 +40,7 @@ action_3 _ = happyReduce_2
 action_4 (13) = happyShift action_6
 action_4 _ = happyFail
 
-action_5 (38) = happyAccept
+action_5 (35) = happyAccept
 action_5 _ = happyFail
 
 action_6 (16) = happyShift action_10
@@ -172,7 +172,7 @@ action_39 _ = happyReduce_16
 happyReduce_1 = happySpecReduce_1  4 happyReduction_1
 happyReduction_1 (HappyAbsSyn5  happy_var_1)
 	 =  HappyAbsSyn4
-		 (happy_var_1
+		 (reverse happy_var_1
 	)
 happyReduction_1 _  = notHappyAtAll 
 
@@ -195,10 +195,10 @@ happyReduce_4 = happyReduce 4 6 happyReduction_4
 happyReduction_4 (_ `HappyStk`
 	(HappyAbsSyn7  happy_var_3) `HappyStk`
 	_ `HappyStk`
-	(HappyTerminal (TLetter happy_var_1)) `HappyStk`
+	(HappyTerminal (TIdent happy_var_1)) `HappyStk`
 	happyRest)
 	 = HappyAbsSyn6
-		 (Rule happy_var_1 happy_var_3
+		 (Rule happy_var_1 (reverse happy_var_3)
 	) `HappyStk` happyRest
 
 happyReduce_5 = happySpecReduce_1  7 happyReduction_5
@@ -261,7 +261,7 @@ happyReduction_12 (_ `HappyStk`
 	) `HappyStk` happyRest
 
 happyReduce_13 = happySpecReduce_1  8 happyReduction_13
-happyReduction_13 (HappyTerminal (TLetter happy_var_1))
+happyReduction_13 (HappyTerminal (TIdent happy_var_1))
 	 =  HappyAbsSyn8
 		 (Next happy_var_1
 	)
@@ -347,7 +347,7 @@ happyReduction_25 _
 	)
 
 happyNewToken action sts stk [] =
-	action 38 38 notHappyAtAll (HappyState action) sts stk []
+	action 35 35 notHappyAtAll (HappyState action) sts stk []
 
 happyNewToken action sts stk (tk:tks) =
 	let cont i = action i i tk (HappyState action) sts stk tks in
@@ -373,14 +373,11 @@ happyNewToken action sts stk (tk:tks) =
 	TAsteroid -> cont 31;
 	TBoundary -> cont 32;
 	TUnderscore -> cont 33;
-	TLetter happy_dollar_dollar -> cont 34;
-	TDigit happy_dollar_dollar -> cont 35;
-	TPlus -> cont 36;
-	TMinus -> cont 37;
+	TIdent happy_dollar_dollar -> cont 34;
 	_ -> happyError' (tk:tks)
 	}
 
-happyError_ 38 tk tks = happyError' tks
+happyError_ 35 tk tks = happyError' tks
 happyError_ _ tk tks = happyError' (tk:tks)
 
 newtype HappyIdentity a = HappyIdentity a
@@ -416,33 +413,6 @@ happySeq = happyDontSeq
 parseError :: [Token] -> a
 parseError _ = error "Parse error"
 
-data Token = TArrow
-           | TDot
-           | TComma
-           | TGo
-           | TTake
-           | TMark
-           | TNothing
-           | TTurn
-           | TCase
-           | TOf
-           | TEnd
-           | TLeft
-           | TRight
-           | TFront
-           | TSemicolon
-           | TEmpty
-           | TLambda
-           | TDebris
-           | TAsteroid
-           | TBoundary
-           | TUnderscore
-           | TLetter String
-           | TDigit Int
-           | TPlus
-           | TMinus
-  deriving (Eq, Show)
-
 data Program = Program [Rule]
     deriving Show
 
@@ -460,15 +430,15 @@ data Cmd = Go
          | Next Ident
   deriving Show
 
-data Alt = Alt Pat [Cmd]
+data Alt = Alt Contents [Cmd]
     deriving Show
 
-data Pat = Lambda
-         | Debris
-         | Asteroid
-         | Boundary
-         | Empty
-         | Rest
+data Contents = Lambda
+              | Debris
+              | Asteroid
+              | Boundary
+              | Empty
+              | Rest
   deriving (Show, Eq)
 
 data Dir = Right
@@ -479,16 +449,16 @@ data Dir = Right
 -- main = getContents >>= print . parseProgram
 main = undefined
 
-type ProgramAlgebra p r x a = ([r] -> p,         -- program
-                              Ident -> [x] -> r, -- rule
-                              x,                 -- go
-                              x,                 -- take
-                              x,                 -- mark
-                              x,                 -- nothing
-                              Dir -> x,          -- turn
-                              Dir -> [a] -> x,   -- case
-                              Ident -> x,        -- next
-                              Pat -> [x] -> a)   -- alt
+type ProgramAlgebra p r x a = ([r] -> p,            -- program
+                              Ident -> [x] -> r,    -- rule
+                              x,                    -- go
+                              x,                    -- take
+                              x,                    -- mark
+                              x,                    -- nothing
+                              Dir -> x,             -- turn
+                              Dir -> [a] -> x,      -- case
+                              Ident -> x,           -- next
+                              Contents -> [x] -> a) -- alt
 
 foldCmd :: ProgramAlgebra p r x a -> Program -> p
 foldCmd (program, rule, go, take, mark, nothing, turn, c, next, alt) = fp
@@ -520,8 +490,8 @@ hasStart = ((\xs -> or xs), (\x _ -> r x), False, False, False, False, (\x -> Fa
   where r x = x == "start"
 
 -- There is no possibility for pattern match failure, i.e., all case expressions must either contain a catch-all pattern _ or contain cases for all five other options.
-allPats :: ProgramAlgebra Bool Bool Bool Pat
-allPats = ((\xs -> or xs), (\_ xs -> or xs), False, False, False, False, (\x -> False), (\_ xs -> r xs), (\x -> False), (\x _ -> x))
+allContents :: ProgramAlgebra Bool Bool Bool Contents
+allContents = ((\xs -> or xs), (\_ xs -> or xs), False, False, False, False, (\x -> False), (\_ xs -> r xs), (\x -> False), (\x _ -> x))
   where r xs = elem Rest xs || (length (nub xs) == 5) && (all def xs)
         def x = elem x [Lambda, Debris, Asteroid, Boundary, Empty]
 
@@ -531,7 +501,7 @@ check p = and [u,t,s,a]
   where u = foldCmd notUndef p
         t = foldCmd notTwice p
         s = foldCmd hasStart p
-        a = foldCmd allPats p
+        a = foldCmd allContents p
 {-# LINE 1 "templates/GenericTemplate.hs" #-}
 
 

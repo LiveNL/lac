@@ -1,7 +1,7 @@
 {
 module Parser where
 import Data.List
-import Debug.Trace
+import Scan
 }
 
 %name parseProgram
@@ -30,10 +30,7 @@ debris          { TDebris }
 asteroid        { TAsteroid }
 boundary        { TBoundary }
 '_'             { TUnderscore }
-letter          { TLetter $$ }
-int             { TDigit $$ }
-'+'             { TPlus }
-'-'             { TMinus }
+ident           { TIdent $$ }
 
 %%
 
@@ -42,7 +39,7 @@ Program : rules                { reverse $1 }
 rules   : Rule                 { [$1] }
         | rules Rule           { $2 : $1 }
 
-Rule    : letter '->' cmds '.' { Rule $1 (reverse $3) }
+Rule    : ident '->' cmds '.'  { Rule $1 (reverse $3) }
 
 cmds    : Cmd                  { [$1] }
         | cmds ',' Cmd         { $3 : $1 }
@@ -53,7 +50,7 @@ Cmd     : go                   { Go }
         | nothing              { Parser.Nothing }
         | turn Dir             { Turn $2 }
         | case Dir of alts end { Case $2 $4 }
-        | letter               { Next $1 }
+        | ident                { Next $1 }
 
 alts    : Alt                  { [$1] }
         | alts ';' Alt         { $3 : $1 }
@@ -75,33 +72,6 @@ Dir     : right                { Parser.Right }
 parseError :: [Token] -> a
 parseError _ = error "Parse error"
 
-data Token = TArrow
-           | TDot
-           | TComma
-           | TGo
-           | TTake
-           | TMark
-           | TNothing
-           | TTurn
-           | TCase
-           | TOf
-           | TEnd
-           | TLeft
-           | TRight
-           | TFront
-           | TSemicolon
-           | TEmpty
-           | TLambda
-           | TDebris
-           | TAsteroid
-           | TBoundary
-           | TUnderscore
-           | TLetter String
-           | TDigit Int
-           | TPlus
-           | TMinus
-  deriving (Eq, Show)
-
 data Program = Program [Rule]
     deriving Show
 
@@ -119,15 +89,15 @@ data Cmd = Go
          | Next Ident
   deriving Show
 
-data Alt = Alt Pat [Cmd]
+data Alt = Alt Contents [Cmd]
     deriving Show
 
-data Pat = Lambda
-         | Debris
-         | Asteroid
-         | Boundary
-         | Empty
-         | Rest
+data Contents = Lambda
+              | Debris
+              | Asteroid
+              | Boundary
+              | Empty
+              | Rest
   deriving (Show, Eq)
 
 data Dir = Right
@@ -138,16 +108,16 @@ data Dir = Right
 -- main = getContents >>= print . parseProgram
 main = undefined
 
-type ProgramAlgebra p r x a = ([r] -> p,         -- program
-                              Ident -> [x] -> r, -- rule
-                              x,                 -- go
-                              x,                 -- take
-                              x,                 -- mark
-                              x,                 -- nothing
-                              Dir -> x,          -- turn
-                              Dir -> [a] -> x,   -- case
-                              Ident -> x,        -- next
-                              Pat -> [x] -> a)   -- alt
+type ProgramAlgebra p r x a = ([r] -> p,            -- program
+                              Ident -> [x] -> r,    -- rule
+                              x,                    -- go
+                              x,                    -- take
+                              x,                    -- mark
+                              x,                    -- nothing
+                              Dir -> x,             -- turn
+                              Dir -> [a] -> x,      -- case
+                              Ident -> x,           -- next
+                              Contents -> [x] -> a) -- alt
 
 foldCmd :: ProgramAlgebra p r x a -> Program -> p
 foldCmd (program, rule, go, take, mark, nothing, turn, c, next, alt) = fp
@@ -179,8 +149,8 @@ hasStart = ((\xs -> or xs), (\x _ -> r x), False, False, False, False, (\x -> Fa
   where r x = x == "start"
 
 -- There is no possibility for pattern match failure, i.e., all case expressions must either contain a catch-all pattern _ or contain cases for all five other options.
-allPats :: ProgramAlgebra Bool Bool Bool Pat
-allPats = ((\xs -> or xs), (\_ xs -> or xs), False, False, False, False, (\x -> False), (\_ xs -> r xs), (\x -> False), (\x _ -> x))
+allContents :: ProgramAlgebra Bool Bool Bool Contents
+allContents = ((\xs -> or xs), (\_ xs -> or xs), False, False, False, False, (\x -> False), (\_ xs -> r xs), (\x -> False), (\x _ -> x))
   where r xs = elem Rest xs || (length (nub xs) == 5) && (all def xs)
         def x = elem x [Lambda, Debris, Asteroid, Boundary, Empty]
 
@@ -190,5 +160,5 @@ check p = and [u,t,s,a]
   where u = foldCmd notUndef p
         t = foldCmd notTwice p
         s = foldCmd hasStart p
-        a = foldCmd allPats p
+        a = foldCmd allContents p
 }
