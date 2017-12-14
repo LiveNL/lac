@@ -8,12 +8,13 @@ import Data.Map (Map)
 import qualified Data.Map as L
 import Control.Monad (replicateM)
 import Data.Char (isSpace)
+import Data.Maybe hiding (Nothing)
 
+import Debug.Trace
 
-type Space     =  Map Pos Contents
-type Size      =  Int
-type Pos       =  (Int, Int)
-data Contents  =  Empty | Lambda | Debris | Asteroid | Boundary
+import Info
+import Scan
+import Parser
 
 parseSpace :: Parser Char Space
 parseSpace =
@@ -36,12 +37,11 @@ contents =
 
 contentsTable :: [(Contents,Char)]
 contentsTable =
-  [  (Empty,'.'),(Lambda,'\\'),(Debris,'%'),(Asteroid,'O'),(Boundary,'#')]
+  [(Empty,'.'),(Lambda,'\\'),(Debris,'%'),(Asteroid,'O'),(Boundary,'#')]
 
 -- These three should be defined by you
-type Ident = ()
-type Commands = ()
-type Heading = ()
+type Commands = [Cmd]
+type Heading = Dir
 
 type Environment = Map Ident Commands
 
@@ -61,4 +61,27 @@ and as a result it failed to parse some Happy-generated modules due to running o
 
  -}
 
- 
+
+{- Exercise 7 -}
+field=fst(head([(L.fromList [((0,0),Empty),((0,1),Empty),((0,2),Empty),((0,3),Empty),((0,4),Empty),((0,5),Empty),((0,6),Empty),((0,7),Empty),((1,0),Empty),((1,1),Empty),((1,2),Empty),((1,3),Empty),((1,4),Debris),((1,5),Empty),((1,6),Empty),((1,7),Empty),((2,0),Empty),((2,1),Empty),((2,2),Debris),((2,3),Debris),((2,4),Debris),((2,5),Debris),((2,6),Empty),((2,7),Empty),((3,0),Empty),((3,1),Empty),((3,2),Empty),((3,3),Empty),((3,4),Debris),((3,5),Debris),((3,6),Debris),((3,7),Empty),((4,0),Empty),((4,1),Empty),((4,2),Empty),((4,3),Debris),((4,4),Debris),((4,5),Debris),((4,6),Empty),((4,7),Empty),((5,0),Empty),((5,1),Empty),((5,2),Empty),((5,3),Empty),((5,4),Debris),((5,5),Empty),((5,6),Debris),((5,7),Debris),((6,0),Empty),((6,1),Empty),((6,2),Empty),((6,3),Empty),((6,4),Debris),((6,5),Debris),((6,6),Debris),((6,7),Debris),((7,0),Empty),((7,1),Empty),((7,2),Empty),((7,3),Empty),((7,4),Empty),((7,5),Empty),((7,6),Empty),((7,7),Empty)],"")]))
+
+spacePrinter :: (Show b, Show a, Eq a) => Map (a, b) Contents -> [Char]
+spacePrinter s = pos' (last (L.toList s)) ++ printer (L.toList s)
+  where pos' ((x, y), _) = "(" ++ show x ++ "," ++ show y ++ ")\n"
+
+printer :: Eq a => [((a, b), Contents)] -> [Char]
+printer [((x, y), z)] = contentToString z
+printer (((x, y), z):k@((a, b), c):xs) | x == a    = contentToString z ++ printer (k: xs)
+                                       | otherwise = contentToString z ++ "\n" ++ printer (k:xs)
+
+contentToString :: Contents -> String
+contentToString c = [(fromJust (lookup c contentsTable))]
+
+{- Exercise 8 -}
+toEnvironment :: String -> Environment -- Check nog implementeren(!!)
+toEnvironment s = L.fromList [(i, c) | (Rule i c) <- scanParse]
+  where scanParse = parseProgram (alexScanTokens s)
+
+{- Exercise 9 -}
+step :: Environment -> ArrowState -> Step
+step = undefined
