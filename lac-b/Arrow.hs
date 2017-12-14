@@ -178,23 +178,27 @@ The added commands will be executed before the remaining stack. I.E. if a recurs
 -}
 
 {- Exercise 11 -}
-
+e2 = toEnvironment " start  ->  case left of Asteroid -> goOn; Boundary -> goOn; Lambda   -> turn left, go, take; _        -> turn left, go, start end.  goOn   ->  case front of Asteroid -> turn right, goOn; Boundary -> turn right, goOn; Lambda   -> go, take; _        -> go, start end."
 e = toEnvironment "start       -> turn right, go, turn left, firstArg.  turnAround  -> turn right, turn right.  return      -> case front of Boundary  ->  nothing; _         ->  go, return end.  firstArg    -> case left of Lambda  ->  go, firstArg, mark, go; _       ->  turnAround, return, turn left, go, go, turn left, secondArg end.  secondArg   -> case left of Lambda  ->  go, secondArg, mark, go; _       ->  turnAround, return, turn left, go, turn left end."
 
 s = parse parseSpace "(4,14)\n\\\\\\\\\\..........\n...............\n\\\\\\\\\\\\\\........\n...............\n...............\n"
+s2 = parse parseSpace "(7,7)\n.O....O.\n.OOO.OO.\n...O.O..\n.O...OO.\n.O.O....\n.O.O.OOO\nOOOO....\n\\....O.O\n"
 
 c = [Turn Right,Go,Turn Left,Next "firstArg"]
+c2 = [Case Left [Alt Asteroid [Next "goOn"],Alt Boundary [Next "goOn"],Alt Lambda [Turn Left,Go,Take],Alt Rest [Turn Left,Go,Next "start"]]]
 h = East
 p = (0,0)
 a = ArrowState (fst (head s)) p h c
+a2 = ArrowState (fst (head s2)) p h c2
 
 interactive :: Environment -> ArrowState -> IO ()
-interactive e a = do putStr (show (step e a) ++ "\n")
-                     k <- getChar
-                     case k of
-                       'k' -> do interactive e (x (step e a))
+interactive e a = do putStr (f (step e a))
+                     putStrLn "\nDo you want to continue? Press a key"
+                     getChar
+                     interactive e (x (step e a))
   where x (Ok n) = n
-        x (Fail n) = error "FUCK"
-        x (Done _ _ _) = error "DONE"
+        x (Fail n) = error "Program failed to execute properly"
+        f (Ok (ArrowState x _ _ _)) = spacePrinter x
+        f (Done _ _ _) = error "Arrow made it to the end, well done!"
 
 
