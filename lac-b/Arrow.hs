@@ -57,36 +57,7 @@ data Step  =  Done  Space Pos Heading
            |  Fail  String
   deriving Show
 
-newtype Program = Program { rules :: [Rule] }
-    deriving Show
-
-data Rule = Rule Ident [Cmd]
-    deriving Show
-
-data Cmd = Go
-         | Take
-         | Mark
-         | Nothing
-         | Turn Dir
-         | Case Dir [Alt]
-         | Next String
-    deriving (Eq, Show)
-
-data Alt = Alt Contents [Cmd]
-    deriving (Eq, Show)
-
-data Dir = Right
-         | Left
-         | Front
-    deriving (Eq, Show)
-
 {- Exercise 9 -}
--- Test data
-spc = fst ( head ( parse parseSpace "(4,14)\n\\\\\\\\\\..........\n...............\n\\\\\\\\\\\\\\........\n...............\n...............\n"))
-env = L.fromList [("start",[Case Left [Alt Asteroid [Next "goOn"],Alt Boundary [Next "goOn"],Alt Lambda [Turn Left,Go,Take],Alt Rest [Turn Left,Go,Next "start"]]])]
-env1 = L.fromList [("start", [Turn Right,Go,Turn Left,Next "firstArg"])]
-arS = ArrowState spc (0,1) Right [Turn Right,Go,Turn Left,Next "firstArg"]
-
 step :: Environment -> ArrowState -> Step
 step e a@(ArrowState _ _ _ st) = action topItem a e
   where topItem = head (st)
