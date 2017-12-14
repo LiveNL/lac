@@ -35,12 +35,12 @@ int             { TDigit $$ }
 
 %%
 
-Program : rules                { $1 }
+Program : rules                { reverse $1 }
 
 rules   : Rule                 { [$1] }
         | rules Rule           { $2 : $1 }
 
-Rule    : letter '->' cmds '.' { Rule $1 $3 }
+Rule    : letter '->' cmds '.' { Rule $1 (reverse $3) }
 
 cmds    : Cmd                  { [$1] }
         | cmds ',' Cmd         { $3 : $1 }
