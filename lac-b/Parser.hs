@@ -257,7 +257,7 @@ happyReduction_12 (_ `HappyStk`
 	_ `HappyStk`
 	happyRest)
 	 = HappyAbsSyn8
-		 (Case happy_var_2 happy_var_4
+		 (Case happy_var_2 (reverse happy_var_4)
 	) `HappyStk` happyRest
 
 happyReduce_13 = happySpecReduce_1  8 happyReduction_13
@@ -288,7 +288,7 @@ happyReduction_16 (HappyAbsSyn7  happy_var_3)
 	_
 	(HappyAbsSyn11  happy_var_1)
 	 =  HappyAbsSyn10
-		 (Alt happy_var_1 happy_var_3
+		 (Alt happy_var_1 (reverse happy_var_3)
 	)
 happyReduction_16 _ _ _  = notHappyAtAll 
 
@@ -429,10 +429,10 @@ data Cmd = Go
          | Turn Dir
          | Case Dir [Alt]
          | Next Ident
-  deriving Show
+  deriving (Show, Eq)
 
 data Alt = Alt Contents [Cmd]
-    deriving Show
+  deriving (Show, Eq)
 
 data Contents = Lambda
               | Debris
@@ -445,8 +445,9 @@ data Contents = Lambda
 data Dir = Right
          | Left
          | Front
-  deriving Show
+  deriving (Show, Eq)
 
+{- Exercise 5 -}
 type ProgramAlgebra p r x a = ([r] -> p,            -- program
                               Ident -> [x] -> r,    -- rule
                               x,                    -- go
@@ -471,6 +472,7 @@ foldCmd (program, rule, go, take, mark, nothing, turn, c, next, alt) = fp
         ff (Next x) = next x
         fa (Alt x xs) = alt x (map ff xs)
 
+{- Exercise 6 -}
 -- There are no calls to undefined rules (rules may be used before they are defined though)
 notUndef :: ProgramAlgebra Bool (Ident,[Ident]) [Ident] [Ident]
 notUndef = ((\xs -> f xs), (\x xs -> (x, (concat xs))), [""], [""], [""], [""], (\x -> [""]), (\_ xs -> concat xs), (\x -> [x]), (\_ x -> concat x))
