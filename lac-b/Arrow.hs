@@ -67,17 +67,17 @@ and as a result it failed to parse some Happy-generated modules due to running o
  -}
 
  {- Exercise 7 -}
-spacePrinter :: (Show b, Show a, Eq a) => Map (a, b) Contents -> [Char]
+spacePrinter :: (Show b, Show a, Eq a) => Map (a, b) Contents -> String
 spacePrinter s = pos' (last (L.toList s)) ++ printer (L.toList s)
   where pos' ((x, y), _) = "(" ++ show x ++ "," ++ show y ++ ")\n"
 
-printer :: Eq a => [((a, b), Contents)] -> [Char]
+printer :: Eq a => [((a, b), Contents)] -> String
 printer [((x, y), z)] = contentToString z
 printer (((x, y), z):k@((a, b), c):xs) | x == a    = contentToString z ++ printer (k: xs)
                                        | otherwise = contentToString z ++ "\n" ++ printer (k:xs)
 
 contentToString :: Contents -> String
-contentToString c = [(M.fromJust (lookup c contentsTable))]
+contentToString c = [M.fromJust (lookup c contentsTable)]
 
 {- Exercise 8 -}
 toEnvironment :: String -> Environment
@@ -101,8 +101,8 @@ step e a@(ArrowState sp p h st) | null st   = Done sp p h
                                 | otherwise = action (head st) a e
 
 action :: Cmd -> ArrowState -> Environment -> Step
-action Go (ArrowState sp p h (_:xs)) _ | elem field [Empty, Lambda, Debris] = Ok (ArrowState sp pos' h xs)
-                                       | otherwise                          = Ok (ArrowState sp p    h xs)
+action Go (ArrowState sp p h (_:xs)) _ | field `elem` [Empty, Lambda, Debris] = Ok (ArrowState sp pos' h xs)
+                                       | otherwise                            = Ok (ArrowState sp p    h xs)
                                        where field = nextField h p sp
                                              pos'  = nextPos h p
 
@@ -124,20 +124,18 @@ action (Case x c) (ArrowState sp p h (_:xs)) _ | null getCmd' = Fail "Error"
   where field   = checkField x h p sp
         getCmd' = getCmd field c
 
-action (Next x) (ArrowState sp p h (_:xs)) e | find /= M.Nothing = Ok (ArrowState sp p h (((M.fromJust find)) ++ xs))
+action (Next x) (ArrowState sp p h (_:xs)) e | find /= M.Nothing = Ok (ArrowState sp p h (M.fromJust find ++ xs))
                                              | otherwise         = Fail "Stack is empty.."
-  where find = (lookup x (reverse (L.toList e)))
+  where find = lookup x (reverse (L.toList e))
 
 getCmd :: Contents -> [Alt] -> [Cmd]
 getCmd f [] = []
-getCmd f ((Alt co cmd):xs) | co == f    = cmd
+getCmd f (Alt co cmd:xs) | co == f    = cmd
                            | co == Rest = cmd
                            | otherwise  = getCmd f xs
 
 nextField :: Heading -> Pos -> Space -> Contents
-nextField h (y,x) s = if M.isNothing n
-                      then Boundary
-                      else M.fromJust n
+nextField h (y,x) s = M.fromMaybe Boundary n
   where n = f h (y,x) s
         f East (y,x) s  = lookup (y,x + 1) (L.toList s)
         f South (y,x) s = lookup (y + 1,x) (L.toList s)
@@ -193,7 +191,7 @@ interactive e a = do putStr (f (step e a))
   where x (Ok n)                    = n
         x (Fail n)                  = error "Program failed to execute properly"
         f (Ok (ArrowState x _ _ _)) = spacePrinter x
-        f (Done _ _ _)              = error "Arrow made it to the end, well done!"
+        f Done{}                    = error "Arrow made it to the end, well done!"
 
 {- BONUS exercise 14 -}
 batch :: Environment -> ArrowState -> (Space, Pos, Heading)
