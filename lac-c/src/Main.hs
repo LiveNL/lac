@@ -3,6 +3,7 @@ module Main where
 import System.Environment
 import System.FilePath
 
+import Prelude hiding ((<*), (<$), (*>))
 import ParseLib.Abstract.Derived
 
 import CSharpLex
@@ -27,7 +28,7 @@ main = do
          -- translate each of the files
          mapM_ processFile files
 
--- processFile compiles one file; it take the name of the input
+-- processFile compiles one file; it takes the name of the input
 -- file and the name of the output file as arguments
 processFile :: (FilePath, FilePath) -> IO ()
 processFile (infile, outfile) =
