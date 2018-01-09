@@ -37,6 +37,6 @@ processFile (infile, outfile) =
     writeFile outfile (process xs)
     putStrLn (outfile ++ " written")
   where process = formatCode
-                . foldCSharp codeAlgebra
-                . start (pClass <* eof)
-                . start lexicalScanner
+                . foldCSharp codeAlgebra  -- fold (Algebra) + algebra (code)
+                . start (pClass <* eof)   -- Haskell Data (Gram)
+                . start lexicalScanner    -- Scanner (Lex)

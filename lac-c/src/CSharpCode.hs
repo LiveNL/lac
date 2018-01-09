@@ -7,6 +7,7 @@ import CSharpGram
 import CSharpAlgebra
 import SSM
 
+import Data.Char
 
 data ValueOrAddress = Value | Address
     deriving Show
@@ -53,7 +54,10 @@ fStatBlock :: [Code] -> Code
 fStatBlock = concat
 
 fExprCon :: Token -> ValueOrAddress -> Code
-fExprCon (ConstInt n) va = [LDC n]
+fExprCon (ConstInt n) va  = [LDC n]
+fExprCon (ConstChar n) va = [LDC (digitToInt n)]
+fExprCon (ConstBool n) va = [LDC (x n)]
+  where x n = if n then 1 else 0
 
 fExprVar :: Token -> ValueOrAddress -> Code
 fExprVar (LowerId x) va = let loc = 37 in case va of
