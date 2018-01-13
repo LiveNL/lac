@@ -23,6 +23,7 @@ data Stat = StatDecl   Decl
 data Expr = ExprConst  Token
           | ExprVar    Token
           | ExprOper   Token Expr Expr
+          | ExprArg    Token [Expr]
           deriving Show
 
 data Decl = Decl Type Token
@@ -43,6 +44,8 @@ pExprSimple :: Parser Token Expr
 pExprSimple =  ExprConst <$> sConst
            <|> ExprVar   <$> sLowerId
            <|> parenthesised pExpr
+           <|> ExprArg   <$> sLowerId <*> argList
+             where argList = parenthesised (option (listOf pExpr (symbol Comma)) [])
 
 pExpr :: Parser Token Expr
 pExpr = chainr pExprSimple (ExprOper <$> sOperator)
@@ -54,7 +57,7 @@ pStatDecl :: Parser Token Stat
 pStatDecl =  pStat <|> StatDecl <$> pDeclSemi
 
 pStat :: Parser Token Stat
-pStat =  StatExpr <$> pExpr <*  sSemi
+pStat =  StatExpr   <$> pExpr <*  sSemi
      <|> StatIf     <$ symbol KeyIf     <*> parenthesised pExpr <*> pStat <*> optionalElse
      <|> StatWhile  <$ symbol KeyWhile  <*> parenthesised pExpr <*> pStat
      <|> StatReturn <$ symbol KeyReturn <*> pExpr               <*  sSemi
