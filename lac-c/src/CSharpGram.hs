@@ -47,8 +47,18 @@ pExprSimple =  ExprConst <$> sConst
            <|> ExprArg   <$> sLowerId <*> argList
              where argList = parenthesised (option (listOf pExpr (symbol Comma)) [])
 
-pExpr :: Parser Token Expr
-pExpr = chainr pExprSimple (ExprOper <$> sOperator)
+pExprMul, pExprAdd, pExprRel, pExprEql, pExprExc, pExprAnd, pExprOr, pExpr :: Parser Token Expr
+pExprMul = chainl pExprSimple (op "*"  <|> op "/"  <|> op "%")
+pExprAdd = chainl pExprMul    (op "+"  <|> op "-")
+pExprRel = chainl pExprAdd    (op "<=" <|> op "<" <|> op ">=" <|> op ">")
+pExprEql = chainl pExprRel    (op "==" <|> op "!=")
+pExprExc = chainl pExprEql    (op "^")
+pExprAnd = chainl pExprExc    (op "&&")
+pExprOr  = chainl pExprAnd    (op "||")
+pExpr    = chainr pExprOr     (op "=")
+
+op :: String -> Parser Token (Expr -> Expr -> Expr)
+op s = ExprOper <$> symbol (Operator s)
 
 pMember :: Parser Token Member
 pMember =  MemberD <$> pDeclSemi <|> pMeth
