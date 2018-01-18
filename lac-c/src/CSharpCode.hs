@@ -59,7 +59,7 @@ fStatWhile e s1 env = [BRA n] ++ (s1 env) ++ c ++ [BRT (-(n + k + 2))]
       (n, k) = (codeSize (s1 env), codeSize c)
 
 fStatReturn :: (ValueOrAddress -> Env -> Code) -> Env -> Code
-fStatReturn e env = e Value env ++ [pop] ++ [RET]
+fStatReturn e env = e Value env ++ [STR r3] ++ [pop] ++ [RET]
 
 fStatBlock :: [Env -> Code] -> Env -> Code
 fStatBlock x env = concatMap ($ env) x
@@ -81,7 +81,7 @@ fExprOp (Operator op)  e1 e2 va env = e1 Value env ++ e2 Value env ++ [opCodes !
 
 fExprArg :: Token -> [ValueOrAddress -> Env -> Code] -> ValueOrAddress -> Env -> Code
 fExprArg (LowerId "print") es va env = concat [e Value env | e <- es] ++ [TRAP 0]
-fExprArg (LowerId x)       es va env = concat [e Value env | e <- es] ++ [Bsr x]
+fExprArg (LowerId x)       es va env = concat [e Value env | e <- es] ++ [Bsr x] ++ [LDR r3]
 
 opCodes :: Map String Instr
 opCodes = fromList [ ("+", ADD), ("-", SUB),  ("*", MUL), ("/", DIV), ("%", MOD)
