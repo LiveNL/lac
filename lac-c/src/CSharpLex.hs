@@ -55,9 +55,20 @@ terminals =
     , ( KeyVoid   , "void"   )
     ]
 
+lexThrowAway :: Parser Char String
+lexThrowAway = concat <$> greedy (lexWhiteSpace <|> lexComments)
 
 lexWhiteSpace :: Parser Char String
-lexWhiteSpace = greedy (satisfy isSpace)
+lexWhiteSpace = some (satisfy isSpace)
+
+lexComments :: Parser Char String
+lexComments = singleLComment <|> multiLComment
+
+singleLComment :: Parser Char String
+singleLComment = token "//" *> many (satisfy (/= '\n')) <* token "\n"
+
+multiLComment :: Parser Char String
+multiLComment = token "/*" *> many anySymbol <* token "*/"
 
 lexLowerId :: Parser Char Token
 lexLowerId = (\x xs -> LowerId (x:xs)) <$> satisfy isLower <*> greedy (satisfy isAlphaNum)
@@ -100,8 +111,7 @@ lexToken = greedyChoice
              ]
 
 lexicalScanner :: Parser Char [Token]
-lexicalScanner = lexWhiteSpace *> greedy (lexToken <* lexWhiteSpace) <* eof
-
+lexicalScanner = lexThrowAway *> greedy (lexToken <* lexThrowAway) <* eof
 
 sStdType :: Parser Token Token
 sStdType = satisfy isStdType
