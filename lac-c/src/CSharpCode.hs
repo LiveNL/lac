@@ -103,7 +103,8 @@ fExprVar (LowerId x) va env = if member x env then let loc = env M.! x in case v
                                               else error ("Missing var: " ++ x ++ ".")
 
 fExprOp :: Token -> (ValueOrAddress -> Env -> Code) -> (ValueOrAddress -> Env -> Code) -> ValueOrAddress -> Env -> Code
-fExprOp (Operator "=") e1 e2 va env = e2 Value env ++ [LDS 0] ++ e1 Address env ++ [STA 0]
+fExprOp (Operator "=")  e1 e2 va env = e2 Value env ++ [LDS 0] ++ e1 Address env ++ [STA 0]
+fExprOp (Operator "+=") e1 e2 va env = e1 Value env ++ e2 Value env ++ [ADD] ++ [LDS 0] ++ e1 Address env ++ [STA 0]
 fExprOp (Operator op) e1 e2 va env = e1 Value env ++ e2 Value env ++ [opCodes ! op]
 
 fExprArg :: Token -> [ValueOrAddress -> Env -> Code] -> ValueOrAddress -> Env -> Code

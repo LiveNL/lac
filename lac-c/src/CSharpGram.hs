@@ -55,7 +55,7 @@ pExprEql = chainl pExprRel    (op "==" <|> op "!=")
 pExprExc = chainl pExprEql    (op "^")
 pExprAnd = chainl pExprExc    (op "&&")
 pExprOr  = chainl pExprAnd    (op "||")
-pExpr    = chainr pExprOr     (op "=")
+pExpr    = chainr pExprOr     (op "=" <|> op "+=")
 
 op :: String -> Parser Token (Expr -> Expr -> Expr)
 op s = ExprOper <$> symbol (Operator s)
