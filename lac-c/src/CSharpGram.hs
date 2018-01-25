@@ -24,6 +24,7 @@ data Expr = ExprConst  Token
           | ExprVar    Token
           | ExprOper   Token Expr Expr
           | ExprArg    Token [Expr]
+          | ExprOperU  Token Expr
           deriving Show
 
 data Decl = Decl Type Token
@@ -43,6 +44,7 @@ braced        p = pack (symbol COpen) p (symbol CClose)
 pExprSimple :: Parser Token Expr
 pExprSimple =  ExprConst <$> sConst
            <|> ExprVar   <$> sLowerId
+           <|> pOperU
            <|> parenthesised pExpr
            <|> ExprArg   <$> sLowerId <*> argList
              where argList = parenthesised (option (listOf pExpr (symbol Comma)) [])
@@ -59,6 +61,9 @@ pExpr    = chainr pExprOr     (op "=" <|> op "+=")
 
 op :: String -> Parser Token (Expr -> Expr -> Expr)
 op s = ExprOper <$> symbol (Operator s)
+
+pOperU :: Parser Token Expr
+pOperU = (flip ExprOperU) <$> (ExprVar <$> sLowerId) <*> (symbol (Operator "++"))
 
 pMember :: Parser Token Member
 pMember =  MemberD <$> pDeclSemi <|> pMeth

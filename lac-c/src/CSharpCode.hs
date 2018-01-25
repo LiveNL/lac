@@ -30,7 +30,7 @@ codeAlgebra =
     ( fClas
     , (fMembDecl, fMembMeth)
     , (fStatDecl, fStatExpr, fStatIf, fStatWhile, fStatReturn, fStatBlock)
-    , (fExprCon, fExprVar, fExprOp, fExprArg)
+    , (fExprCon, fExprVar, fExprOp, fExprArg, fExprOpU)
     )
 
 fClas :: Token -> [Code] -> Code
@@ -110,6 +110,9 @@ fExprOp (Operator op) e1 e2 va env = e1 Value env ++ e2 Value env ++ [opCodes ! 
 fExprArg :: Token -> [ValueOrAddress -> Env -> Code] -> ValueOrAddress -> Env -> Code
 fExprArg (LowerId "print") es va env = concat [e Value env | e <- es] ++ [TRAP 0]
 fExprArg (LowerId x)       es va env = concat [e Value env | e <- es] ++ [Bsr x] ++ [LDR r3]
+
+fExprOpU :: Token -> (ValueOrAddress -> Env -> Code) -> ValueOrAddress -> Env -> Code
+fExprOpU (Operator "++") e1 va env = e1 Value env ++ [LDC 1, ADD, LDS 0] ++ e1 Address env ++ [STA 0]
 
 opCodes :: Map String Instr
 opCodes = fromList [ ("+", ADD), ("-", SUB),  ("*", MUL), ("/", DIV), ("%", MOD)
