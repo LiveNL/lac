@@ -14,6 +14,7 @@ data Token = POpen    | PClose      -- parentheses     ()
            | KeyWhile | KeyReturn
            | KeyTry   | KeyCatch
            | KeyClass | KeyVoid
+           | KeyFor
            | StdType   String       -- the 8 standard types
            | Operator  String       -- the 15 operators
            | UpperId   String       -- uppercase identifiers
@@ -53,6 +54,7 @@ terminals =
     , ( KeyCatch  , "catch"  )
     , ( KeyClass  , "class"  )
     , ( KeyVoid   , "void"   )
+    , ( KeyFor    , "for"   )
     ]
 
 lexThrowAway :: Parser Char String

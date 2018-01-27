@@ -76,8 +76,18 @@ pStat =  StatExpr   <$> pExpr <*  sSemi
      <|> StatIf     <$ symbol KeyIf     <*> parenthesised pExpr <*> pStat <*> optionalElse
      <|> StatWhile  <$ symbol KeyWhile  <*> parenthesised pExpr <*> pStat
      <|> StatReturn <$ symbol KeyReturn <*> pExpr               <*  sSemi
+     <|> forBlock   <$ symbol KeyFor    <*> parenthesised pFor  <*> braced (many pStatDecl)
      <|> pBlock
      where optionalElse = option ((\_ x -> x) <$> symbol KeyElse <*> pStat) (StatBlock [])
+
+pFor :: Parser Token ([Stat], Expr, Expr)
+pFor = (\s e ss -> (s, e, ss)) <$> (expList <|> initList) <*> pExpr <* sSemi <*> pExpr
+  where expList = (listOf (StatExpr <$> pExpr) (symbol Comma)) <* sSemi
+        initList = (\x y -> [StatDecl (Decl x (LowerId (id y))), (StatExpr y)]) <$> (TypePrim <$> sStdType) <*> (pExpr) <* sSemi
+        id (ExprOper _ (ExprVar (LowerId k)) _) = k
+
+forBlock :: ([Stat], Expr, Expr) -> [Stat] -> Stat
+forBlock (s, e, ss) b = StatBlock (s ++ [StatWhile e (StatBlock (b ++ [StatExpr ss]))])
 
 pBlock :: Parser Token Stat
 pBlock = StatBlock <$> braced (many pStatDecl)
