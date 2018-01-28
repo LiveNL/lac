@@ -1,3 +1,5 @@
+-- Jordi Wippert 6303013
+--
 module CSharpLex where
 
 import Prelude hiding ((<*), (<$), (*>))
@@ -57,6 +59,7 @@ terminals =
     , ( KeyFor    , "for"   )
     ]
 
+-- Task 8; Remove comments.
 lexThrowAway :: Parser Char String
 lexThrowAway = concat <$> greedy (lexWhiteSpace <|> lexComments)
 
@@ -81,6 +84,8 @@ lexUpperId = (\x xs -> UpperId (x:xs)) <$> satisfy isUpper <*> greedy (satisfy i
 lexConstInt :: Parser Char Token
 lexConstInt = (ConstInt . read) <$> greedy1 (satisfy isDigit)
 
+-- Task 1, handle boolean and character constants (lexConstBool and lexConstChar)
+--         internal mapping to int is in CSharpCode.hs
 lexConstBool :: Parser Char Token
 lexConstBool = ConstBool <$> (token "true" *> succeed True <|> token "false" *> succeed False)
 
