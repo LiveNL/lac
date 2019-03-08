@@ -1,3 +1,5 @@
+-- Jordi Wippert 6303013
+
 module CSharpGram where
 
 import Prelude hiding ((<*), (<$), (*>))
@@ -41,6 +43,7 @@ parenthesised p = pack (symbol POpen) p (symbol PClose)
 bracketed     p = pack (symbol SOpen) p (symbol SClose)
 braced        p = pack (symbol COpen) p (symbol CClose)
 
+-- Task 4, add method call with params (ExprArg with argList)
 pExprSimple :: Parser Token Expr
 pExprSimple =  ExprConst <$> sConst
            <|> ExprVar   <$> sLowerId
@@ -49,6 +52,7 @@ pExprSimple =  ExprConst <$> sConst
            <|> ExprArg   <$> sLowerId <*> argList
              where argList = parenthesised (option (listOf pExpr (symbol Comma)) [])
 
+-- Task 2 & 3, operator priority + associativity
 pExprMul, pExprAdd, pExprRel, pExprEql, pExprExc, pExprAnd, pExprOr, pExpr :: Parser Token Expr
 pExprMul = chainl pExprSimple (op "*"  <|> op "/"  <|> op "%")
 pExprAdd = chainl pExprMul    (op "+"  <|> op "-")
@@ -62,6 +66,7 @@ pExpr    = chainr pExprOr     (op "=" <|> op "+=")
 op :: String -> Parser Token (Expr -> Expr -> Expr)
 op s = ExprOper <$> symbol (Operator s)
 
+-- Task 9; Add '++' parser
 pOperU :: Parser Token Expr
 pOperU = (flip ExprOperU) <$> (ExprVar <$> sLowerId) <*> (symbol (Operator "++"))
 
@@ -80,6 +85,7 @@ pStat =  StatExpr   <$> pExpr <*  sSemi
      <|> pBlock
      where optionalElse = option ((\_ x -> x) <$> symbol KeyElse <*> pStat) (StatBlock [])
 
+-- Task 10; Add parser for 'for-loop'
 pFor :: Parser Token ([Stat], Expr, Expr)
 pFor = (\s e ss -> (s, e, ss)) <$> (expList <|> initList) <*> pExpr <* sSemi <*> pExpr
   where expList = (listOf (StatExpr <$> pExpr) (symbol Comma)) <* sSemi
